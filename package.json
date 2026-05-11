@@ -1,0 +1,21 @@
+{
+  "name": "queue-manager-app",
+  "version": "1.0.0",
+  "description": "Modular queue manager app — master branch is the skeleton; each client profile lives on its own branch",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
+    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Omer12Sh/queue-manager-app.git"
+  },
+  "author": "",
+  "license": "ISC"
+}
