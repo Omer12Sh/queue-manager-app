@@ -1,25 +1,15 @@
 version: 2
 updates:
-  # Root npm workspace
+  # Single npm entry for the entire workspace monorepo.
+  # Using one root entry ensures Dependabot always updates the root
+  # package-lock.json together with each workspace package.json.
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
     groups:
-      dev-dependencies:
-        dependency-type: 'development'
-    labels:
-      - 'dependencies'
-      - 'npm'
-
-  # Backend
-  - package-ecosystem: 'npm'
-    directory: '/backend'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    groups:
+      # Backend groups
       prisma:
         patterns:
           - 'prisma'
@@ -27,38 +17,19 @@ updates:
       express:
         patterns:
           - 'express'
-          - '@types/express'
-    labels:
-      - 'dependencies'
-      - 'backend'
-
-  # Frontend
-  - package-ecosystem: 'npm'
-    directory: '/frontend'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    groups:
+          - '@types/express*'
+      # Frontend groups
       react:
         patterns:
           - 'react'
-          - 'react-*'
+          - 'react-dom'
+          - 'react-router-dom'
           - '@types/react*'
       vite:
         patterns:
           - 'vite'
           - '@vitejs/*'
-    labels:
-      - 'dependencies'
-      - 'frontend'
-
-  # Mobile
-  - package-ecosystem: 'npm'
-    directory: '/mobile'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    groups:
+      # Mobile groups
       expo:
         patterns:
           - 'expo'
@@ -69,9 +40,25 @@ updates:
           - 'react-native'
           - 'react-native-*'
           - '@react-native*'
+      # Remaining dev dependencies across all workspaces
+      dev-dependencies:
+        dependency-type: 'development'
+    ignore:
+      # TailwindCSS v4 is a complete rewrite; requires full CSS/config migration
+      - dependency-name: 'tailwindcss'
+        versions: ['>=4']
+      # Prisma v7 changed the PrismaClient output path; requires migration
+      - dependency-name: 'prisma'
+        versions: ['>=7']
+      - dependency-name: '@prisma/client'
+        versions: ['>=7']
+      # TypeScript 6 deprecates moduleResolution:node used in Expo's base tsconfig;
+      # upgrade requires Expo SDK or tsconfig migration first
+      - dependency-name: 'typescript'
+        versions: ['>=6']
     labels:
       - 'dependencies'
-      - 'mobile'
+      - 'npm'
 
   # GitHub Actions
   - package-ecosystem: 'github-actions'
