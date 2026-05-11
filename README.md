@@ -74,14 +74,14 @@ docker compose up postgres redis -d
 
 ### 4. Run database migrations & seed
 ```bash
-cd backend
-npx prisma migrate dev --name init
-npx ts-node prisma/seed.ts
+# Run from project root — no need to cd into backend
+npm run prisma:migrate --workspace=backend -- --name init
+npm run prisma:seed --workspace=backend
 ```
 
 ### 5. Start development servers
 ```bash
-# From project root:
+# Make sure you're in the project root (not inside backend/ or frontend/)
 npm run dev
 ```
 
