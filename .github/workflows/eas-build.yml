@@ -37,6 +37,8 @@ jobs:
   eas-build:
     name: EAS Build (${{ github.event.inputs.platform || 'all' }} / ${{ github.event.inputs.profile || 'production' }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: mobile

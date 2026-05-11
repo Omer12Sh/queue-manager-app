@@ -39,7 +39,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     restore();
-  }, [logout]);
+  // logout is created with useCallback([]) — it's stable and safe to omit
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = async (email: string, password: string) => {
     const res = await authApi.login(email, password);

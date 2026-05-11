@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SUPPORTED_LANGUAGES } from '../../i18n';
+import i18n from '../../i18n';
 
 const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
@@ -34,12 +35,15 @@ export default function SettingsPage() {
           setProfile(p);
           setForm({ businessName: p.businessName, description: p.description || '', address: p.address || '', workingHours: p.workingHours || {} });
           // Apply provider's default language if set
-          if (p.defaultLanguage) setLanguage(p.defaultLanguage);
+          if (p.defaultLanguage) {
+            i18n.changeLanguage(p.defaultLanguage);
+          }
         }
         if (annRes.status === 'fulfilled') setAnnouncements(annRes.value.data);
       } finally { setIsLoading(false); }
     };
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleSave = async (e: FormEvent) => {
