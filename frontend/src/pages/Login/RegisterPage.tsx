@@ -3,12 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../../services/api';
 import { Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { Role } from '../../types';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../../components/common/LanguageSwitcher';
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'CLIENT' as Role });
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'CLIENT' as const });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -62,13 +61,6 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.phoneLabel')}</label>
               <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t('auth.phonePlaceholder')} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.roleLabel')}</label>
-              <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
-                <option value="CLIENT">{t('auth.roleClient')}</option>
-                <option value="SERVICE_PROVIDER">{t('auth.roleProvider')}</option>
-              </select>
             </div>
             <button type="submit" disabled={isLoading} className="btn-primary w-full">
               {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
