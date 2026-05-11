@@ -6,6 +6,12 @@
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
   }
+
+  /* Hebrew / RTL font support */
+  :root[lang="he"] body,
+  [dir="rtl"] body {
+    font-family: 'Segoe UI', 'Arial', 'Helvetica Neue', sans-serif;
+  }
 }
 
 @layer components {

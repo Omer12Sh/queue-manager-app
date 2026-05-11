@@ -1,10 +1,12 @@
 import { type ReactNode } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Calendar, Settings, MessageSquare, LogOut,
   Users, Sparkles, Bell, ChevronRight,
 } from 'lucide-react';
+import LanguageSwitcher from '../common/LanguageSwitcher';
 
 interface NavItem {
   label: string;
@@ -13,19 +15,20 @@ interface NavItem {
   roles: string[];
 }
 
-const navItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['ADMIN', 'SERVICE_PROVIDER', 'CLIENT'] },
-  { label: 'Appointments', path: '/appointments', icon: <Calendar size={20} />, roles: ['ADMIN', 'SERVICE_PROVIDER', 'CLIENT'] },
-  { label: 'Services', path: '/services', icon: <Sparkles size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
-  { label: 'Messages', path: '/messages', icon: <MessageSquare size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
-  { label: 'Users', path: '/users', icon: <Users size={20} />, roles: ['ADMIN'] },
-  { label: 'Settings', path: '/settings', icon: <Settings size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
-];
-
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
+
+  const navItems: NavItem[] = [
+    { label: t('nav.dashboard'), path: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['ADMIN', 'SERVICE_PROVIDER', 'CLIENT'] },
+    { label: t('nav.appointments'), path: '/appointments', icon: <Calendar size={20} />, roles: ['ADMIN', 'SERVICE_PROVIDER', 'CLIENT'] },
+    { label: t('nav.services'), path: '/services', icon: <Sparkles size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
+    { label: t('nav.messages'), path: '/messages', icon: <MessageSquare size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
+    { label: t('nav.users'), path: '/users', icon: <Users size={20} />, roles: ['ADMIN'] },
+    { label: t('nav.settings'), path: '/settings', icon: <Settings size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
+  ];
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -40,11 +43,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col rtl:border-r-0 rtl:border-l">
         {/* Logo */}
         <div className="px-6 py-5 border-b border-gray-100">
-          <h1 className="text-xl font-bold text-brand-700">QueueManager</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Smart scheduling platform</p>
+          <h1 className="text-xl font-bold text-brand-700">{t('app.name')}</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{t('app.tagline')}</p>
         </div>
 
         {/* Nav */}
@@ -63,7 +66,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               >
                 {item.icon}
                 {item.label}
-                {isActive && <ChevronRight size={14} className="ml-auto" />}
+                {isActive && <ChevronRight size={14} className="ltr:ml-auto rtl:mr-auto rtl:rotate-180" />}
               </Link>
             );
           })}
@@ -80,13 +83,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
               <span className={`badge text-xs ${user ? roleColors[user.role] : ''}`}>
-                {user?.role.replace('_', ' ')}
+                {user ? t(`roles.${user.role}`) : ''}
               </span>
             </div>
             <button
               onClick={handleLogout}
               className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-              title="Logout"
+              title={t('nav.logout')}
             >
               <LogOut size={16} />
             </button>
@@ -100,6 +103,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
           <div />
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <button className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
               <Bell size={20} />
             </button>
@@ -117,3 +121,4 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
+

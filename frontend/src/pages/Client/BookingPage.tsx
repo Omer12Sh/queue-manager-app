@@ -6,6 +6,7 @@ import { Clock, ChevronRight, Check, Sparkles } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { format, addDays, startOfDay } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 type Step = 'provider' | 'service' | 'date' | 'time' | 'confirm';
 
@@ -22,6 +23,7 @@ export default function BookingPage() {
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [booking, setBooking] = useState(false);
+  const { t } = useTranslation();
 
   // Dates to show
   const dates = Array.from({ length: 14 }, (_, i) => {
@@ -70,10 +72,10 @@ export default function BookingPage() {
         startTime: selectedSlot!.startTime,
         notes,
       });
-      toast.success('Appointment booked! ��');
+      toast.success(t('booking.bookingSuccess'));
       navigate('/dashboard');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Booking failed';
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('booking.bookingFailed');
       toast.error(msg);
     } finally {
       setBooking(false);
@@ -81,19 +83,19 @@ export default function BookingPage() {
   };
 
   const stepLabels: { step: Step; label: string }[] = [
-    { step: 'provider', label: 'Provider' },
-    { step: 'service', label: 'Service' },
-    { step: 'date', label: 'Date' },
-    { step: 'time', label: 'Time' },
-    { step: 'confirm', label: 'Confirm' },
+    { step: 'provider', label: t('booking.stepProvider') },
+    { step: 'service', label: t('booking.stepService') },
+    { step: 'date', label: t('booking.stepDate') },
+    { step: 'time', label: t('booking.stepTime') },
+    { step: 'confirm', label: t('booking.stepConfirm') },
   ];
   const stepIndex = stepLabels.findIndex((s) => s.step === step);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Book an Appointment</h1>
-        <p className="text-gray-500 text-sm mt-1">Choose your provider, service, and time</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('booking.title')}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t('booking.subtitle')}</p>
       </div>
 
       {/* Progress */}
@@ -114,7 +116,7 @@ export default function BookingPage() {
           {/* Step: Provider */}
           {step === 'provider' && (
             <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">Choose a Service Provider</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{t('booking.chooseProvider')}</h2>
               <div className="space-y-3">
                 {providers.map((p) => (
                   <button key={p.id} onClick={() => handleSelectProvider(p)} className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors text-left">
@@ -123,10 +125,10 @@ export default function BookingPage() {
                       <p className="font-medium text-gray-900">{p.providerProfile?.businessName || p.name}</p>
                       {p.providerProfile?.description && <p className="text-sm text-gray-500 line-clamp-1">{p.providerProfile.description}</p>}
                     </div>
-                    <ChevronRight size={18} className="ml-auto text-gray-400" />
+                    <ChevronRight size={18} className="ltr:ml-auto rtl:mr-auto rtl:rotate-180 text-gray-400" />
                   </button>
                 ))}
-                {providers.length === 0 && <p className="text-gray-400 text-sm text-center py-8">No providers available</p>}
+                {providers.length === 0 && <p className="text-gray-400 text-sm text-center py-8">{t('booking.noProviders')}</p>}
               </div>
             </div>
           )}
@@ -134,7 +136,7 @@ export default function BookingPage() {
           {/* Step: Service */}
           {step === 'service' && (
             <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">Choose a Service</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{t('booking.chooseService')}</h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 {services.map((svc) => (
                   <button key={svc.id} onClick={() => handleSelectService(svc)} className="p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 text-left transition-colors">
@@ -154,7 +156,7 @@ export default function BookingPage() {
           {/* Step: Date */}
           {step === 'date' && (
             <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">Choose a Date</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{t('booking.chooseDate')}</h2>
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                 {dates.map((date) => {
                   const d = new Date(date + 'T12:00:00');
@@ -173,11 +175,11 @@ export default function BookingPage() {
           {/* Step: Time */}
           {step === 'time' && (
             <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">Choose a Time — {selectedDate}</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{t('booking.chooseTime')} — {selectedDate}</h2>
               {slots.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-400">No available slots for this date.</p>
-                  <button onClick={() => setStep('date')} className="btn-secondary mt-4">← Back to dates</button>
+                  <p className="text-gray-400">{t('booking.noSlots')}</p>
+                  <button onClick={() => setStep('date')} className="btn-secondary mt-4">{t('booking.backToDates')}</button>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -194,23 +196,23 @@ export default function BookingPage() {
           {/* Step: Confirm */}
           {step === 'confirm' && selectedProvider && selectedService && selectedSlot && (
             <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">Confirm Your Appointment</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{t('booking.confirmTitle')}</h2>
               <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-4">
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Provider</span><span className="font-medium">{selectedProvider.providerProfile?.businessName || selectedProvider.name}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Service</span><span className="font-medium">{selectedService.name}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Date</span><span className="font-medium">{format(new Date(selectedSlot.startTime), 'EEEE, MMMM d, yyyy')}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Time</span><span className="font-medium">{format(new Date(selectedSlot.startTime), 'h:mm a')}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Duration</span><span className="font-medium">{selectedService.durationMin} minutes</span></div>
-                <div className="flex justify-between text-sm border-t border-gray-200 pt-3"><span className="text-gray-700 font-medium">Price</span><span className="font-bold text-brand-700">₪{selectedService.price}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">{t('booking.providerLabel')}</span><span className="font-medium">{selectedProvider.providerProfile?.businessName || selectedProvider.name}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">{t('booking.serviceLabel')}</span><span className="font-medium">{selectedService.name}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">{t('booking.dateLabel')}</span><span className="font-medium">{format(new Date(selectedSlot.startTime), 'EEEE, MMMM d, yyyy')}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">{t('booking.timeLabel')}</span><span className="font-medium">{format(new Date(selectedSlot.startTime), 'h:mm a')}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">{t('booking.durationLabel')}</span><span className="font-medium">{selectedService.durationMin} {t('booking.minutes')}</span></div>
+                <div className="flex justify-between text-sm border-t border-gray-200 pt-3"><span className="text-gray-700 font-medium">{t('booking.priceLabel')}</span><span className="font-bold text-brand-700">₪{selectedService.price}</span></div>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-                <textarea className="input resize-none h-20" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any special requests…" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('booking.notesLabel')}</label>
+                <textarea className="input resize-none h-20" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('booking.notesPlaceholder')} />
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setStep('time')} className="btn-secondary flex-1">← Back</button>
+                <button onClick={() => setStep('time')} className="btn-secondary flex-1">{t('booking.back')}</button>
                 <button onClick={handleBook} disabled={booking} className="btn-primary flex-1">
-                  {booking ? 'Booking…' : '✓ Confirm Booking'}
+                  {booking ? t('booking.booking') : t('booking.confirmButton')}
                 </button>
               </div>
             </div>
@@ -220,3 +222,4 @@ export default function BookingPage() {
     </div>
   );
 }
+

@@ -1,0 +1,45 @@
+name: Deploy — Staging
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: []   # Add CI job IDs here if you want deployment to wait
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Frontend: build and upload to CDN / S3 / hosting ──────────────────
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: ${{ vars.STAGING_API_URL }}
+
+      # Example: deploy to Vercel CLI (replace with your hosting provider)
+      # - name: Deploy frontend to Vercel
+      #   uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      #     working-directory: frontend
+
+      # ── Backend: push Docker image (already built by docker-publish) ───────
+      - name: Trigger backend re-deploy
+        # Example: use Render / Railway / Fly.io deploy hook
+        run: |
+          echo "Add your deploy hook here"
+          # curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

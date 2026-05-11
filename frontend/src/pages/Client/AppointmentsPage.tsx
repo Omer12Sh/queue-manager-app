@@ -8,20 +8,22 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
-
-const STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: '', label: 'All' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'CONFIRMED', label: 'Confirmed' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-  { value: 'RESCHEDULED', label: 'Rescheduled' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
+
+  const STATUS_FILTERS = [
+    { value: '', label: t('appointments.filterAll') },
+    { value: 'PENDING', label: t('appointments.filterPending') },
+    { value: 'CONFIRMED', label: t('appointments.filterConfirmed') },
+    { value: 'COMPLETED', label: t('appointments.filterCompleted') },
+    { value: 'CANCELLED', label: t('appointments.filterCancelled') },
+    { value: 'RESCHEDULED', label: t('appointments.filterRescheduled') },
+  ];
 
   const load = async () => {
     const params: Record<string, string> = {};
@@ -34,12 +36,12 @@ export default function AppointmentsPage() {
   useEffect(() => { setIsLoading(true); load(); }, [filter]);
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Cancel this appointment?')) return;
+    if (!confirm(t('appointments.cancelConfirm'))) return;
     try {
       await appointmentApi.updateStatus(id, 'CANCELLED');
       setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'CANCELLED' as AppointmentStatus } : a)));
-      toast.success('Appointment cancelled');
-    } catch { toast.error('Failed to cancel'); }
+      toast.success(t('appointments.cancelSuccess'));
+    } catch { toast.error(t('appointments.cancelFailed')); }
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -48,11 +50,11 @@ export default function AppointmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Appointments</h1>
-          <p className="text-gray-500 text-sm mt-1">View and manage all your bookings</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('appointments.title')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t('appointments.subtitle')}</p>
         </div>
         <Link to="/appointments/book" className="btn-primary flex items-center gap-2">
-          <PlusCircle size={16} /> Book New
+          <PlusCircle size={16} /> {t('appointments.bookNew')}
         </Link>
       </div>
 
@@ -72,9 +74,9 @@ export default function AppointmentsPage() {
 
       {appointments.length === 0 ? (
         <EmptyState
-          title="No appointments found"
-          description="Book your first appointment to get started"
-          action={<Link to="/appointments/book" className="btn-primary">Book Now</Link>}
+          title={t('appointments.noFound')}
+          description={t('appointments.noFoundDesc')}
+          action={<Link to="/appointments/book" className="btn-primary">{t('appointments.bookNow')}</Link>}
         />
       ) : (
         <div className="space-y-3">
@@ -93,7 +95,7 @@ export default function AppointmentsPage() {
                 <StatusBadge status={appt.status} />
                 {['PENDING', 'CONFIRMED'].includes(appt.status) && (
                   <button onClick={() => handleCancel(appt.id)} className="text-xs text-red-500 hover:text-red-700 font-medium">
-                    Cancel
+                    {t('appointments.cancel')}
                   </button>
                 )}
               </div>
@@ -104,3 +106,4 @@ export default function AppointmentsPage() {
     </div>
   );
 }
+

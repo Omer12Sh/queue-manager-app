@@ -10,6 +10,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { format, parseISO, isToday } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function ProviderDashboard() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function ProviderDashboard() {
   const [aiResponse, setAiResponse] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const load = async () => {
@@ -45,9 +47,9 @@ export default function ProviderDashboard() {
     try {
       const res = await aiApi.command(aiCommand);
       setAiResponse(res.data.message);
-      toast.success('AI command processed');
+      toast.success(t('provider.aiProcessed'));
     } catch {
-      setAiResponse('AI assistant unavailable. Please configure OPENAI_API_KEY in backend .env');
+      setAiResponse(t('provider.aiUnavailable'));
     } finally {
       setAiLoading(false);
     }
@@ -55,19 +57,21 @@ export default function ProviderDashboard() {
 
   if (isLoading) return <LoadingSpinner />;
 
+  const quickCmds = [t('provider.quickCmd1'), t('provider.quickCmd2'), t('provider.quickCmd3')];
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name} 👋</h1>
-        <p className="text-gray-500 text-sm mt-1">Here's your business overview for today</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('provider.welcomeBack', { name: user?.name })}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t('provider.overviewSubtitle')}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Today's Appointments" value={todayAppts.length} icon={<Calendar size={20} />} color="brand" />
-        <StatCard label="Pending Confirmations" value={pending.length} icon={<Clock size={20} />} color="yellow" />
-        <StatCard label="Active Services" value={services.length} icon={<Sparkles size={20} />} color="blue" />
-        <StatCard label="Total Revenue" value={`₪${totalRevenue.toLocaleString()}`} icon={<DollarSign size={20} />} color="green" />
+        <StatCard label={t('provider.todayAppointments')} value={todayAppts.length} icon={<Calendar size={20} />} color="brand" />
+        <StatCard label={t('provider.pendingConfirmations')} value={pending.length} icon={<Clock size={20} />} color="yellow" />
+        <StatCard label={t('provider.activeServices')} value={services.length} icon={<Sparkles size={20} />} color="blue" />
+        <StatCard label={t('provider.totalRevenue')} value={`₪${totalRevenue.toLocaleString()}`} icon={<DollarSign size={20} />} color="green" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -76,13 +80,13 @@ export default function ProviderDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Calendar size={18} className="text-brand-600" />
-              <h2 className="font-semibold text-gray-900">Today's Schedule</h2>
+              <h2 className="font-semibold text-gray-900">{t('provider.todaySchedule')}</h2>
             </div>
-            <span className="badge bg-brand-100 text-brand-700">{todayAppts.length} appointments</span>
+            <span className="badge bg-brand-100 text-brand-700">{todayAppts.length} {t('provider.appointments')}</span>
           </div>
 
           {todayAppts.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">No appointments scheduled for today 🎉</p>
+            <p className="text-gray-400 text-sm text-center py-8">{t('provider.noTodayAppointments')}</p>
           ) : (
             <div className="space-y-3">
               {todayAppts.map((appt) => (
@@ -106,17 +110,15 @@ export default function ProviderDashboard() {
         <div className="card">
           <div className="flex items-center gap-2 mb-4">
             <Bot size={18} className="text-brand-600" />
-            <h2 className="font-semibold text-gray-900">AI Assistant</h2>
-            <span className="badge bg-purple-100 text-purple-700 ml-auto">Beta</span>
+            <h2 className="font-semibold text-gray-900">{t('provider.aiAssistant')}</h2>
+            <span className="badge bg-purple-100 text-purple-700 ml-auto">{t('provider.aiBeta')}</span>
           </div>
-          <p className="text-gray-500 text-sm mb-4">
-            Give natural language commands to manage your schedule. Requires OPENAI_API_KEY.
-          </p>
+          <p className="text-gray-500 text-sm mb-4">{t('provider.aiDescription')}</p>
           <div className="space-y-3">
             <textarea
               value={aiCommand}
               onChange={(e) => setAiCommand(e.target.value)}
-              placeholder={'e.g. "Delay all today\'s appointments by 30 minutes" or "What\'s on my schedule today?"'}
+              placeholder={t('provider.aiPlaceholder')}
               className="input resize-none h-24 text-sm"
             />
             <button
@@ -125,7 +127,7 @@ export default function ProviderDashboard() {
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
               <Send size={16} />
-              {aiLoading ? 'Processing…' : 'Send command'}
+              {aiLoading ? t('provider.aiProcessing') : t('provider.aiSendCommand')}
             </button>
             {aiResponse && (
               <div className="bg-purple-50 rounded-xl p-4 text-sm text-purple-800 border border-purple-100">
@@ -136,9 +138,9 @@ export default function ProviderDashboard() {
           </div>
 
           <div className="mt-4">
-            <p className="text-xs text-gray-400 mb-2">Quick commands:</p>
+            <p className="text-xs text-gray-400 mb-2">{t('provider.quickCommands')}</p>
             <div className="flex flex-wrap gap-2">
-              {["What's today's schedule?", 'Delay appointments by 30 min', 'Cancel all pending appointments'].map((cmd) => (
+              {quickCmds.map((cmd) => (
                 <button
                   key={cmd}
                   onClick={() => setAiCommand(cmd)}
@@ -156,17 +158,17 @@ export default function ProviderDashboard() {
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
           <Users size={18} className="text-brand-600" />
-          <h2 className="font-semibold text-gray-900">Recent Appointments</h2>
+          <h2 className="font-semibold text-gray-900">{t('provider.recentAppointments')}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-gray-500 border-b border-gray-100">
-                <th className="pb-3 font-medium">Client</th>
-                <th className="pb-3 font-medium">Service</th>
-                <th className="pb-3 font-medium">Date & Time</th>
-                <th className="pb-3 font-medium">Price</th>
-                <th className="pb-3 font-medium">Status</th>
+                <th className="pb-3 font-medium">{t('provider.colClient')}</th>
+                <th className="pb-3 font-medium">{t('provider.colService')}</th>
+                <th className="pb-3 font-medium">{t('provider.colDateTime')}</th>
+                <th className="pb-3 font-medium">{t('provider.colPrice')}</th>
+                <th className="pb-3 font-medium">{t('provider.colStatus')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -182,10 +184,11 @@ export default function ProviderDashboard() {
             </tbody>
           </table>
           {appointments.length === 0 && (
-            <p className="text-center text-gray-400 py-8 text-sm">No appointments yet</p>
+            <p className="text-center text-gray-400 py-8 text-sm">{t('provider.noAppointments')}</p>
           )}
         </div>
       </div>
     </div>
   );
 }
+

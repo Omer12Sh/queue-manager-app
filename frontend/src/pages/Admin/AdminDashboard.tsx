@@ -6,12 +6,14 @@ import StatCard from '../../components/common/StatCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [tab, setTab] = useState<'overview' | 'users'>('overview');
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const load = async () => {
@@ -30,9 +32,9 @@ export default function AdminDashboard() {
     try {
       await adminApi.manageUser(user.id, { isActive: !user.isActive });
       setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isActive: !u.isActive } : u)));
-      toast.success(`User ${user.isActive ? 'deactivated' : 'activated'}`);
+      toast.success(user.isActive ? t('admin.userDeactivated') : t('admin.userActivated'));
     } catch {
-      toast.error('Failed to update user');
+      toast.error(t('admin.toggleFailed'));
     }
   };
 
@@ -47,31 +49,31 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin Control Panel</h1>
-        <p className="text-gray-500 text-sm mt-1">Full system overview and management</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('admin.title')}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t('admin.subtitle')}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Total Users" value={stats?.totalUsers ?? 0} icon={<Users size={20} />} color="brand" />
-        <StatCard label="Total Appointments" value={stats?.totalAppointments ?? 0} icon={<Calendar size={20} />} color="blue" />
-        <StatCard label="Active Providers" value={stats?.activeProviders ?? 0} icon={<Layers size={20} />} color="green" />
-        <StatCard label="Pending Today" value={stats?.pendingAppointments ?? 0} icon={<Clock size={20} />} color="yellow" />
-        <StatCard label="Today's Appointments" value={stats?.todayAppointments ?? 0} icon={<CheckCircle size={20} />} color="blue" />
-        <StatCard label="Total Revenue" value={`₪${(stats?.totalRevenue ?? 0).toLocaleString()}`} icon={<TrendingUp size={20} />} color="green" />
+        <StatCard label={t('admin.totalUsers')} value={stats?.totalUsers ?? 0} icon={<Users size={20} />} color="brand" />
+        <StatCard label={t('admin.totalAppointments')} value={stats?.totalAppointments ?? 0} icon={<Calendar size={20} />} color="blue" />
+        <StatCard label={t('admin.activeProviders')} value={stats?.activeProviders ?? 0} icon={<Layers size={20} />} color="green" />
+        <StatCard label={t('admin.pendingToday')} value={stats?.pendingAppointments ?? 0} icon={<Clock size={20} />} color="yellow" />
+        <StatCard label={t('admin.todayAppointments')} value={stats?.todayAppointments ?? 0} icon={<CheckCircle size={20} />} color="blue" />
+        <StatCard label={t('admin.totalRevenue')} value={`₪${(stats?.totalRevenue ?? 0).toLocaleString()}`} icon={<TrendingUp size={20} />} color="green" />
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2">
-        {(['overview', 'users'] as const).map((t) => (
+        {(['overview', 'users'] as const).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-              tab === t ? 'bg-brand-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              tab === tabKey ? 'bg-brand-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            {t}
+            {tabKey === 'overview' ? t('admin.tabOverview') : t('admin.tabUsers')}
           </button>
         ))}
       </div>
@@ -79,17 +81,17 @@ export default function AdminDashboard() {
       {/* Users table */}
       {tab === 'users' && (
         <div className="card">
-          <h2 className="font-semibold text-gray-900 mb-4">All Users ({users.length})</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">{t('admin.allUsers', { count: users.length })}</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="pb-3 font-medium">Name</th>
-                  <th className="pb-3 font-medium">Email</th>
-                  <th className="pb-3 font-medium">Role</th>
-                  <th className="pb-3 font-medium">Joined</th>
-                  <th className="pb-3 font-medium">Status</th>
-                  <th className="pb-3 font-medium">Actions</th>
+                  <th className="pb-3 font-medium">{t('admin.colName')}</th>
+                  <th className="pb-3 font-medium">{t('admin.colEmail')}</th>
+                  <th className="pb-3 font-medium">{t('admin.colRole')}</th>
+                  <th className="pb-3 font-medium">{t('admin.colJoined')}</th>
+                  <th className="pb-3 font-medium">{t('admin.colStatus')}</th>
+                  <th className="pb-3 font-medium">{t('admin.colActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -98,12 +100,12 @@ export default function AdminDashboard() {
                     <td className="py-3 font-medium text-gray-900">{u.name}</td>
                     <td className="py-3 text-gray-600">{u.email}</td>
                     <td className="py-3">
-                      <span className={`badge ${roleColors[u.role]}`}>{u.role.replace('_', ' ')}</span>
+                      <span className={`badge ${roleColors[u.role]}`}>{t(`roles.${u.role}`)}</span>
                     </td>
                     <td className="py-3 text-gray-500">{format(parseISO(u.createdAt), 'MMM d, yyyy')}</td>
                     <td className="py-3">
                       <span className={`badge ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {u.isActive ? 'Active' : 'Inactive'}
+                        {u.isActive ? t('admin.statusActive') : t('admin.statusInactive')}
                       </span>
                     </td>
                     <td className="py-3">
@@ -113,7 +115,7 @@ export default function AdminDashboard() {
                           u.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
                         }`}
                       >
-                        {u.isActive ? 'Deactivate' : 'Activate'}
+                        {u.isActive ? t('admin.deactivate') : t('admin.activate')}
                       </button>
                     </td>
                   </tr>
@@ -128,7 +130,7 @@ export default function AdminDashboard() {
       {tab === 'overview' && (
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="card">
-            <h2 className="font-semibold text-gray-900 mb-4">System Status</h2>
+            <h2 className="font-semibold text-gray-900 mb-4">{t('admin.systemStatus')}</h2>
             <div className="space-y-3">
               {[
                 { label: 'API Server', status: 'Online', color: 'text-green-600' },
@@ -146,11 +148,11 @@ export default function AdminDashboard() {
           </div>
 
           <div className="card">
-            <h2 className="font-semibold text-gray-900 mb-4">User Distribution</h2>
+            <h2 className="font-semibold text-gray-900 mb-4">{t('admin.userDistribution')}</h2>
             {[
-              { role: 'Clients', count: users.filter((u) => u.role === 'CLIENT').length, color: 'bg-green-200' },
-              { role: 'Service Providers', count: users.filter((u) => u.role === 'SERVICE_PROVIDER').length, color: 'bg-brand-200' },
-              { role: 'Admins', count: users.filter((u) => u.role === 'ADMIN').length, color: 'bg-red-200' },
+              { role: t('admin.clients'), count: users.filter((u) => u.role === 'CLIENT').length, color: 'bg-green-200' },
+              { role: t('admin.serviceProviders'), count: users.filter((u) => u.role === 'SERVICE_PROVIDER').length, color: 'bg-brand-200' },
+              { role: t('admin.admins'), count: users.filter((u) => u.role === 'ADMIN').length, color: 'bg-red-200' },
             ].map((item) => (
               <div key={item.role} className="flex items-center gap-3 py-2">
                 <div className={`h-3 rounded-full ${item.color}`} style={{ width: `${Math.max(8, (item.count / users.length) * 100 || 8)}%`, minWidth: 32 }} />
@@ -164,3 +166,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

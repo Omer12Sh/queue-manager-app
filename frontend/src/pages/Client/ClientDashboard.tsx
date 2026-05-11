@@ -7,12 +7,14 @@ import { Calendar, Clock, History, PlusCircle, Megaphone, Star } from 'lucide-re
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { format, parseISO, isAfter } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 export default function ClientDashboard() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [announcements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const load = async () => {
@@ -30,9 +32,9 @@ export default function ClientDashboard() {
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return t('client.greetingMorning');
+    if (h < 18) return t('client.greetingAfternoon');
+    return t('client.greetingEvening');
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -45,7 +47,7 @@ export default function ClientDashboard() {
           <div>
             <p className="text-white/80 text-sm">{greeting()},</p>
             <h1 className="text-3xl font-bold mt-1">{user?.name} 👋</h1>
-            <p className="text-white/70 mt-2">Manage your beauty appointments all in one place</p>
+            <p className="text-white/70 mt-2">{t('client.welcomeSubtitle')}</p>
           </div>
           <div className="hidden sm:block">
             <Star size={60} className="text-white/20" />
@@ -54,13 +56,13 @@ export default function ClientDashboard() {
 
         <div className="flex gap-3 mt-6 flex-wrap">
           <Link to="/appointments/book" className="bg-white text-brand-700 px-4 py-2 rounded-xl font-medium text-sm hover:bg-brand-50 transition-colors flex items-center gap-2">
-            <PlusCircle size={16} /> Book Appointment
+            <PlusCircle size={16} /> {t('client.bookAppointment')}
           </Link>
           <Link to="/appointments" className="bg-white/20 text-white px-4 py-2 rounded-xl font-medium text-sm hover:bg-white/30 transition-colors flex items-center gap-2">
-            <Calendar size={16} /> View Schedule
+            <Calendar size={16} /> {t('client.viewSchedule')}
           </Link>
           <Link to="/appointments/history" className="bg-white/20 text-white px-4 py-2 rounded-xl font-medium text-sm hover:bg-white/30 transition-colors flex items-center gap-2">
-            <History size={16} /> History
+            <History size={16} /> {t('client.history')}
           </Link>
         </div>
       </div>
@@ -69,15 +71,15 @@ export default function ClientDashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="card text-center">
           <p className="text-3xl font-bold text-brand-600">{upcoming.length}</p>
-          <p className="text-sm text-gray-500 mt-1">Upcoming</p>
+          <p className="text-sm text-gray-500 mt-1">{t('client.upcoming')}</p>
         </div>
         <div className="card text-center">
           <p className="text-3xl font-bold text-green-600">{past.filter((a) => a.status === 'COMPLETED').length}</p>
-          <p className="text-sm text-gray-500 mt-1">Completed</p>
+          <p className="text-sm text-gray-500 mt-1">{t('client.completed')}</p>
         </div>
         <div className="card text-center col-span-2 sm:col-span-1">
           <p className="text-3xl font-bold text-gray-700">{appointments.length}</p>
-          <p className="text-sm text-gray-500 mt-1">Total bookings</p>
+          <p className="text-sm text-gray-500 mt-1">{t('client.totalBookings')}</p>
         </div>
       </div>
 
@@ -86,7 +88,7 @@ export default function ClientDashboard() {
         <div className="card">
           <div className="flex items-center gap-2 mb-4">
             <Megaphone size={18} className="text-brand-600" />
-            <h2 className="font-semibold text-gray-900">Updates from your provider</h2>
+            <h2 className="font-semibold text-gray-900">{t('client.updatesFromProvider')}</h2>
           </div>
           <div className="space-y-3">
             {announcements.map((ann) => (
@@ -105,19 +107,19 @@ export default function ClientDashboard() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Clock size={18} className="text-brand-600" />
-            <h2 className="font-semibold text-gray-900">Upcoming Appointments</h2>
+            <h2 className="font-semibold text-gray-900">{t('client.upcomingAppointments')}</h2>
           </div>
           <Link to="/appointments/book" className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1">
-            <PlusCircle size={14} /> Book
+            <PlusCircle size={14} /> {t('client.book')}
           </Link>
         </div>
 
         {upcoming.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <Calendar size={40} className="mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No upcoming appointments.</p>
+            <p className="text-sm">{t('client.noUpcoming')}</p>
             <Link to="/appointments/book" className="text-brand-600 text-sm font-medium hover:underline mt-1 block">
-              Book your first appointment →
+              {t('client.bookFirst')}
             </Link>
           </div>
         ) : (
@@ -144,7 +146,7 @@ export default function ClientDashboard() {
         <div className="card">
           <div className="flex items-center gap-2 mb-4">
             <History size={18} className="text-gray-500" />
-            <h2 className="font-semibold text-gray-900">Recent History</h2>
+            <h2 className="font-semibold text-gray-900">{t('client.recentHistory')}</h2>
           </div>
           <div className="space-y-2">
             {past.slice(0, 3).map((appt) => (
@@ -158,10 +160,11 @@ export default function ClientDashboard() {
             ))}
           </div>
           <Link to="/appointments/history" className="text-brand-600 text-sm font-medium hover:underline mt-3 block">
-            View all history →
+            {t('client.viewAllHistory')}
           </Link>
         </div>
       )}
     </div>
   );
 }
+
