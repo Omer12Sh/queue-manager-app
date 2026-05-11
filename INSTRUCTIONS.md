@@ -1,6 +1,19 @@
-# 📋 Queue Manager App — Developer Instructions
+# 🤖 Queue Manager App — Agent Context File
 
-> Comprehensive context for onboarding and continued development. Keep this file up to date as the project evolves.
+> **This file is written for the AI coding agent (GitHub Copilot / Claude / etc.).**
+> It provides full project context so the agent starts every session already knowing the history, architecture, conventions, and current state of the project.
+>
+> ### ⚠️ Standing instruction to the agent
+> **At the end of every session, update this file with any new context learned:**
+> - New features added or planned
+> - New branches created
+> - Schema changes
+> - New environment variables or integrations
+> - Decisions or conventions established during the session
+> - Any bugs found or fixed
+> - Changes to tooling, CI, or deployment
+>
+> Append a new entry under [Session Log](#session-log) at the bottom of this file, with the date and a summary of what changed.
 
 ---
 
@@ -410,3 +423,27 @@ npx prisma studio
 | AI Assistant | `OPENAI_API_KEY` | Feature disabled, UI shows warning |
 | SMS/WhatsApp | Twilio ENVs | In-app messaging still works |
 | Redis queue | `REDIS_HOST/PORT` | Falls back to direct DB queries |
+
+---
+
+## Session Log
+
+> **Agent:** append a new entry here at the end of every session. Format:
+> ```
+> ### YYYY-MM-DD — <short summary>
+> - bullet points of what was done / decided / changed
+> ```
+
+### 2026-05-11 — Initial repo build + INSTRUCTIONS.md created
+
+- Full monorepo scaffolded: `/frontend` (React+Vite+Tailwind), `/backend` (Express+TypeScript+Prisma), `/mobile` (Expo React Native).
+- Three user roles implemented: `ADMIN`, `SERVICE_PROVIDER`, `CLIENT`.
+- JWT authentication with role-based middleware in place.
+- Prisma schema defined with models: `User`, `ProviderProfile`, `Service`, `Appointment`, `Message`, `Announcement`.
+- Redis sorted-set queue for appointments; Socket.IO for real-time updates.
+- Twilio (SMS/WhatsApp) and OpenAI GPT-4o-mini (AI assistant) integrations wired up as optional services.
+- i18n: `i18next` + `react-i18next` for both web and mobile; English (`en`) and Hebrew (`he`) locales; `qm_language` key in localStorage (web) / AsyncStorage (mobile); RTL handled via `LanguageContext`.
+- CI/CD: 7 GitHub Actions workflows (`backend-ci`, `frontend-ci`, `mobile-ci`, `docker-publish`, `eas-build`, `deploy-staging`, `release`). Dependabot for all 4 ecosystems.
+- Branching strategy established: `master` = generic skeleton; `feature/<business-name>` = per-client deployment. First planned client profile: `feature/maya-brows` (eyebrow designer).
+- Demo seed accounts: `admin@queue.app / Admin123!`, `provider@queue.app / Provider123!`, `client@queue.app / Client123!`.
+- `INSTRUCTIONS.md` created (this file) as the persistent agent context document.
