@@ -1,0 +1,136 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SERVICE_PROVIDER
+  CLIENT
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  RESCHEDULED
+}
+
+enum MessageType {
+  SMS
+  WHATSAPP
+  IN_APP
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  role      Role     @default(CLIENT)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  providerProfile  ProviderProfile?
+  clientAppointments  Appointment[] @relation("ClientAppointments")
+  providerAppointments Appointment[] @relation("ProviderAppointments")
+  sentMessages     Message[]    @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
+  announcements    Announcement[]
+
+  @@map("users")
+}
+
+model ProviderProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  businessName    String
+  description     String?
+  avatarUrl       String?
+  address         String?
+  workingHours    Json     // { mon: {open:"09:00", close:"18:00"}, ... }
+  defaultLanguage String   @default("en") // ISO 639-1 language code
+  services        Service[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("provider_profiles")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  providerId  String
+  name        String
+  description String?
+  durationMin Int      // duration in minutes
+  price       Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  provider     ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  clientId    String
+  providerId  String
+  serviceId   String
+  startTime   DateTime
+  endTime     DateTime
+  status      AppointmentStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  client   User    @relation("ClientAppointments", fields: [clientId], references: [id])
+  provider User    @relation("ProviderAppointments", fields: [providerId], references: [id])
+  service  Service @relation(fields: [serviceId], references: [id])
+
+  @@map("appointments")
+}
+
+model Message {
+  id         String      @id @default(cuid())
+  fromId     String
+  toId       String?     // null = broadcast
+  content    String
+  type       MessageType @default(IN_APP)
+  isRead     Boolean     @default(false)
+  sentAt     DateTime    @default(now())
+
+  from User  @relation("SentMessages", fields: [fromId], references: [id])
+  to   User? @relation("ReceivedMessages", fields: [toId], references: [id])
+
+  @@map("messages")
+}
+
+model Announcement {
+  id         String   @id @default(cuid())
+  providerId String
+  title      String
+  content    String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  provider User @relation(fields: [providerId], references: [id])
+
+  @@map("announcements")
+}
