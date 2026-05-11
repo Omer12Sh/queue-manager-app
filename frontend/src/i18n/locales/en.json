@@ -105,6 +105,8 @@
     "bookingSuccess": "Appointment booked!",
     "bookingFailed": "Booking failed",
     "noProviders": "No providers available",
+    "noServices": "No services available at this time",
+    "loadFailed": "Could not load booking information. Please try again.",
     "noSlots": "No available slots for this date.",
     "minutes": "minutes"
   },

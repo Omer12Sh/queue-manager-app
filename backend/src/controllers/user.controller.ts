@@ -5,8 +5,10 @@ import { AuthRequest } from '../middleware/auth.middleware';
 export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   const { role, search } = req.query;
 
-  // Clients may only list service providers
-  const effectiveRole = req.user?.role === 'CLIENT' ? 'SERVICE_PROVIDER' : (role as string | undefined);
+  // Clients may only list service providers regardless of the role query param
+  const effectiveRole = req.user?.role === 'CLIENT'
+    ? 'SERVICE_PROVIDER'
+    : (role as string | undefined);
 
   const users = await prisma.user.findMany({
     where: {

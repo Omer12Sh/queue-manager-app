@@ -21,6 +21,7 @@ export default function BookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [booking, setBooking] = useState(false);
   const { t } = useTranslation();
 
@@ -34,15 +35,22 @@ export default function BookingPage() {
     // Auto-select the first (and only) service provider
     userApi.getAll({ role: 'SERVICE_PROVIDER' }).then((res) => {
       const providers: User[] = res.data;
-      if (providers.length > 0) {
-        const provider = providers[0];
-        setSelectedProvider(provider);
-        return serviceApi.getByProvider(provider.id).then((svcRes) => {
-          setServices(svcRes.data);
-        });
+      if (providers.length === 0) {
+        setLoadError(t('booking.noProviders'));
+        return;
       }
+      const provider = providers[0];
+      setSelectedProvider(provider);
+      return serviceApi.getByProvider(provider.id).then((svcRes) => {
+        setServices(svcRes.data);
+        if (svcRes.data.length === 0) {
+          setLoadError(t('booking.noServices'));
+        }
+      });
+    }).catch(() => {
+      setLoadError(t('booking.loadFailed'));
     }).finally(() => setIsLoading(false));
-  }, []);
+  }, [t]);
 
   const handleSelectService = (svc: Service) => {
     setSelectedService(svc);
@@ -110,7 +118,11 @@ export default function BookingPage() {
         ))}
       </div>
 
-      {isLoading ? <LoadingSpinner /> : (
+      {isLoading ? <LoadingSpinner /> : loadError ? (
+        <div className="card text-center py-10 text-gray-400">
+          <p>{loadError}</p>
+        </div>
+      ) : (
         <>
           {/* Step: Service */}
           {step === 'service' && (
