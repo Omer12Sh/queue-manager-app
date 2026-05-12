@@ -104,9 +104,9 @@ export default function SettingsPage() {
     const ov = getOverride(date);
     setEditingDate(date);
     setEditIsOff(ov?.isOff ?? false);
-    // slots is now string[] in new format
+    // slots is string[] (new format). Runtime check guards against legacy {open,close} DB records.
     setEditSlots(Array.isArray(ov?.slots) && ov.slots.length > 0 && typeof ov.slots[0] === 'string'
-      ? [...(ov.slots as string[])]
+      ? [...ov.slots]
       : [],
     );
   };

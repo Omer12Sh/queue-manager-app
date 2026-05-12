@@ -70,8 +70,8 @@ export default function BookScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <TouchableOpacity onPress={goBack} style={{ paddingHorizontal: 12 }}>
-          <Text style={{ fontSize: 16, color: '#c026d3', fontWeight: '600' }}>{'‹ ' + t('booking.back')}</Text>
+        <TouchableOpacity onPress={goBack} style={styles.headerBackBtn}>
+          <Text style={styles.headerBackText}>{'‹ ' + t('booking.back')}</Text>
         </TouchableOpacity>
       ),
     });
@@ -520,5 +520,7 @@ const styles = StyleSheet.create({
   },
   confirmBtnDisabled: { opacity: 0.6 },
   confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  headerBackBtn: { paddingHorizontal: 12 },
+  headerBackText: { fontSize: 16, color: '#c026d3', fontWeight: '600' },
 });
 

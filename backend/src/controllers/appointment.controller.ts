@@ -64,6 +64,15 @@ export const getAppointment = async (req: AuthRequest, res: Response): Promise<v
 
 const SAFETY_BUFFER_MS = 10 * 60 * 1000; // 10-minute buffer between appointments
 
+/** Type guard: new format stores specific slot times as strings; legacy stores {open,close} windows */
+function isSpecificSlotFormat(slots: unknown): slots is string[] {
+  return Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'string';
+}
+
+function isLegacyWindowFormat(slots: unknown): slots is { open: string; close: string }[] {
+  return Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && slots[0] !== null;
+}
+
 export const createAppointment = async (req: AuthRequest, res: Response): Promise<void> => {
   // Accept either a single serviceId or an array serviceIds[]
   const { providerId, serviceId, serviceIds, startTime, notes } = req.body;
@@ -266,15 +275,13 @@ export const getAvailableSlots = async (req: AuthRequest, res: Response): Promis
   let windows: { open: string; close: string }[] = [];
 
   if (override && !override.isOff) {
-    const rawSlots = override.slots as unknown;
-    if (Array.isArray(rawSlots) && rawSlots.length > 0) {
-      if (typeof rawSlots[0] === 'string') {
-        // New format: specific bookable time strings
-        specificSlotTimes = rawSlots as string[];
-      } else {
-        // Legacy {open, close} format — treat as windows
-        windows = rawSlots as { open: string; close: string }[];
-      }
+    const rawSlots = override.slots;
+    if (isSpecificSlotFormat(rawSlots)) {
+      // New format: specific bookable time strings
+      specificSlotTimes = rawSlots;
+    } else if (isLegacyWindowFormat(rawSlots)) {
+      // Legacy {open, close} format — treat as windows
+      windows = rawSlots;
     }
   } else if (!override) {
     // Fall back to weekly working hours

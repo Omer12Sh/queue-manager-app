@@ -126,8 +126,9 @@ export default function SettingsTab() {
     const ov = getOverride(date);
     setEditingDate(date);
     setEditIsOff(ov?.isOff ?? false);
+    // slots is string[] (new format); fall back to empty if legacy {open,close} data or no slots
     setEditSlots(Array.isArray(ov?.slots) && ov.slots.length > 0 && typeof ov.slots[0] === 'string'
-      ? [...(ov.slots as unknown as string[])]
+      ? [...ov.slots]
       : [],
     );
   };
