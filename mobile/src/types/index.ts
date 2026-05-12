@@ -53,6 +53,7 @@ export interface Appointment {
   clientId: string;
   providerId: string;
   serviceId: string;
+  extraServiceIds: string[];
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
@@ -61,4 +62,13 @@ export interface Appointment {
   client?: Pick<User, 'id' | 'name' | 'email' | 'phone'>;
   provider?: Pick<User, 'id' | 'name'> & { providerProfile?: ProviderProfile };
   service?: Service;
+  extraServices?: Service[];
+}
+
+export interface AvailabilityOverride {
+  id: string;
+  providerId: string;
+  date: string;
+  isOff: boolean;
+  slots: { open: string; close: string }[];
 }

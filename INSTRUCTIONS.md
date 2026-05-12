@@ -459,3 +459,46 @@ npx prisma studio
 - Branching strategy established: `master` = generic skeleton; `feature/<business-name>` = per-client deployment. First planned client profile: `feature/maya-brows` (eyebrow designer).
 - Demo seed accounts: `admin@queue.app / Admin123!`, `provider@queue.app / Provider123!`, `client@queue.app / Client123!`.
 - `INSTRUCTIONS.md` created (this file) as the persistent agent context document.
+
+### 2026-05-12 — Mobile app full sync + RTL + phone auth + UX improvements
+
+**Mobile ↔ Web sync:**
+- Added `extraServiceIds` / `extraServices` to mobile `Appointment` type to match web.
+- Added `AvailabilityOverride` type to mobile types.
+- Updated `appointmentApi.getAvailableSlots` to accept `serviceIds: string[]` and serialise as comma-separated (matching web and backend).
+- Added `providerApi` methods: `createAnnouncement`, `deleteAnnouncement`, `getAvailabilityOverrides`, `upsertAvailabilityOverride`, `deleteAvailabilityOverride`.
+- Added full `messageApi` (getAll, send, broadcast, markRead).
+
+**Book screen rewrite (`mobile/app/book.tsx`):**
+- Removed "choose provider" step — app auto-selects the single service provider.
+- Added multi-service selection (checkbox-style) with totals bar showing combined duration + price.
+- Dates now loaded from `AvailabilityOverride` records (only dates with custom hours are bookable).
+- Booking success message changed to "Appointment request received! Waiting for provider approval."
+- Back button fully fixed: hardware back + swipe-back handled via `BackHandler` / `useFocusEffect`; navigates between steps instead of leaving the screen. Native header back arrow hidden via `headerBackVisible: false`.
+
+**Provider actions:**
+- `ProviderHomeScreen`: added Confirm (✓) and Cancel (✕) buttons for PENDING appointments; Complete button for CONFIRMED.
+- Revenue section added: Today's Expected and All-Time Earned.
+- `appointments.tsx` tab: added Confirm/Cancel for provider PENDING, Complete for provider CONFIRMED; shows client name + total price for providers; shows all services (primary + extras).
+
+**Settings tab for providers:**
+- Created `mobile/app/(tabs)/settings.tsx` with: Business Profile editor, Language preference, Monthly Availability Calendar (same calendar override system as web), Announcements manager.
+- Added Settings tab to `_layout.tsx` (visible only for `SERVICE_PROVIDER` role).
+
+**Logout button:** moved away from screen edge (`marginRight: 20, padding: 4`).
+
+**Hebrew RTL fixes:**
+- Added `writingDirection: dir` to all `textAlignStyle` objects.
+- Changed `borderLeftWidth/borderLeftColor` → logical `borderStartWidth/borderStartColor` in announcement cards.
+- Added `direction: dir` to the `wrapper` View in `ClientHomeScreen` so FAB position also respects RTL.
+
+**Phone OTP authentication:**
+- Backend: new `otp.controller.ts` with `requestOtp`, `verifyOtp`, `registerPhone` handlers.
+- In-memory OTP store (5-min TTL, max 5 attempts, 1-min flood protection).
+- Twilio SMS if `TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM_NUMBER` env vars set; otherwise returns `devCode` in the response for dev-mode display.
+- New routes: `POST /api/auth/request-otp`, `POST /api/auth/verify-otp`, `POST /api/auth/register-phone`.
+- Mobile login screen rewired to phone-first flow (Enter phone → OTP code → register if new). Dev-mode OTP shown in a yellow in-app box. Email/password login still accessible via "Sign in with email instead".
+
+**i18n:** added missing keys to both `en.json` and `he.json`: `confirm`, `complete`, `statusUpdated`, `statusUpdateFailed`, `servicesSelected`, `next`, `noAvailableDates`, `noServices`, `loadFailed`, `dailyExpected`, `allTimeEarned`, `colActions`, all Settings keys, and phone-auth keys (`sendOtp`, `enterCode`, `verify`, `useEmailLogin`, `usePhoneLogin`).
+
+**Known limitation:** `I18nManager.forceRTL()` requires a full app restart to apply; RTL text styles (`writingDirection`, `textAlign`) are applied via React Native style props as a workaround for hot-reload sessions.

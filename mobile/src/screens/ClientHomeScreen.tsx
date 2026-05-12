@@ -18,7 +18,7 @@ export default function ClientHomeScreen() {
   const { t } = useTranslation();
   const { dir } = useLanguage();
   const isRTL = dir === 'rtl';
-  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left' };
+  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left', writingDirection: dir };
   const router = useRouter();
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function ClientHomeScreen() {
   }
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { direction: dir }]}>
       <ScrollView style={[styles.container, { direction: dir }]} contentContainerStyle={styles.content}>
         {/* Banner */}
         <View style={styles.banner}>
@@ -208,8 +208,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#c026d3',
+    borderStartWidth: 3,
+    borderStartColor: '#c026d3',
   },
   annTitle: { fontSize: 13, fontWeight: '700', color: '#111827', marginBottom: 4 },
   annContent: { fontSize: 12, color: '#374151', lineHeight: 18 },

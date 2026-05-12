@@ -31,7 +31,7 @@ export default function TabsLayout() {
   };
 
   const LogoutButton = () => (
-    <TouchableOpacity onPress={handleLogout} style={{ marginRight: 14 }}>
+    <TouchableOpacity onPress={handleLogout} style={{ marginRight: 20, padding: 4 }}>
       <Ionicons name="log-out-outline" size={24} color="#c026d3" />
     </TouchableOpacity>
   );
@@ -73,6 +73,16 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="cut-outline" size={22} color={color} />,
           // Hide this tab entirely for clients – they browse services during booking
           href: user.role === 'CLIENT' ? null : undefined,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t('nav.settings'),
+          tabBarLabel: t('nav.settings'),
+          tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={22} color={color} />,
+          // Only show settings tab for service providers
+          href: user.role === 'SERVICE_PROVIDER' ? undefined : null,
         }}
       />
     </Tabs>
