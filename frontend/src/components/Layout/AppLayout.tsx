@@ -41,7 +41,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     { label: t('nav.dashboard'), path: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['ADMIN', 'SERVICE_PROVIDER', 'CLIENT'] },
     { label: t('nav.appointments'), path: '/appointments', icon: <Calendar size={20} />, roles: ['ADMIN', 'SERVICE_PROVIDER', 'CLIENT'] },
     { label: t('nav.services'), path: '/services', icon: <Sparkles size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
-    { label: t('nav.messages'), path: '/messages', icon: <MessageSquare size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
+    { label: t('nav.messages'), path: '/messages', icon: <MessageSquare size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN', 'CLIENT'] },
     { label: t('nav.users'), path: '/users', icon: <Users size={20} />, roles: ['ADMIN'] },
     { label: t('nav.settings'), path: '/settings', icon: <Settings size={20} />, roles: ['SERVICE_PROVIDER', 'ADMIN'] },
   ];
@@ -137,7 +137,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </button>
 
               {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 overflow-hidden">
+                <div className="absolute ltr:right-0 rtl:left-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                     <span className="font-semibold text-gray-900 text-sm">{t('notifications.title')}</span>
                     {unreadCount > 0 && (

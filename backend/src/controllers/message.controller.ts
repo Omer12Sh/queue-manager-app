@@ -37,10 +37,21 @@ export const broadcastMessage = async (req: AuthRequest, res: Response): Promise
   const { content, type = 'IN_APP', sendExternal = false } = req.body;
   const message = await prisma.message.create({
     data: { fromId: req.user!.id, content, type: type as MessageType },
+    include: { from: { select: { id: true, name: true } } },
   });
 
   const io = req.app.get('io');
-  if (io) io.to(`provider-clients:${req.user!.id}`).emit('broadcast:message', message);
+  if (io) {
+    // Emit to each client's personal room so they receive it regardless of which socket room they joined
+    const clientAppointments = await prisma.appointment.findMany({
+      where: { providerId: req.user!.id },
+      select: { clientId: true },
+      distinct: ['clientId'],
+    });
+    for (const c of clientAppointments) {
+      io.to(`user:${c.clientId}`).emit('broadcast:message', message);
+    }
+  }
 
   if (sendExternal && (type === 'SMS' || type === 'WHATSAPP')) {
     const clients = await prisma.appointment.findMany({

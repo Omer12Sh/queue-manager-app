@@ -434,7 +434,19 @@ npx prisma studio
 > - bullet points of what was done / decided / changed
 > ```
 
-### 2026-05-11 — Initial repo build + INSTRUCTIONS.md created
+### 2026-05-12 — Bug fixes: language, notifications, booking, messaging, env
+
+- **Fix 1 – Settings language override**: Removed erroneous `i18n.changeLanguage(p.defaultLanguage)` call in `SettingsPage.tsx` that reset the UI language to the provider profile's `defaultLanguage` every time the settings page was loaded. Language is now solely managed by `LanguageContext` (persisted in `localStorage`).
+- **Fix 2 – Notifications dropdown RTL**: Changed the notification dropdown position in `AppLayout.tsx` from `right-0` (always left-opening) to `ltr:right-0 rtl:left-0` so it opens to the correct side in both LTR and RTL layouts, preventing off-screen clipping in Hebrew.
+- **Fix 3 – 400 error on timeslots**: Fixed Axios array serialisation mismatch — `serviceIds` array is now joined as a comma-separated string before being sent as a query param (`serviceIds.join(',')` in `api.ts`). The backend's existing `.split(',')` handler processes it correctly. Also added `try/catch` around `handleSelectDate` in `BookingPage.tsx` so a failed slot fetch shows a toast error instead of an infinite loading state.
+- **Fix 4 – In-app messages for clients**:
+  - Changed `broadcastMessage` backend controller to emit `broadcast:message` directly to each client's personal Socket.IO room (`user:{clientId}`) instead of the `provider-clients:{providerId}` group room that clients never joined. This ensures broadcast messages arrive as real-time notifications.
+  - Created `frontend/src/pages/Client/ClientMessagesPage.tsx`: a full inbox view for clients showing all direct and broadcast messages from providers, with mark-as-read functionality.
+  - Added `CLIENT` role to the Messages nav item in `AppLayout.tsx`.
+  - Added `MessagesRouter` in `App.tsx` that serves `ClientMessagesPage` to clients and `MessagesPage` to providers/admins.
+  - Added `messages.clientSubtitle` translation key to `en.json` and `he.json`.
+- **Fix 5 – VITE_SHOW_DEMO env var**: Uncommented and set `VITE_SHOW_DEMO=true` in `.env.example` so the demo quick-fill buttons are visible by default in development/demo environments.
+
 
 - Full monorepo scaffolded: `/frontend` (React+Vite+Tailwind), `/backend` (Express+TypeScript+Prisma), `/mobile` (Expo React Native).
 - Three user roles implemented: `ADMIN`, `SERVICE_PROVIDER`, `CLIENT`.
