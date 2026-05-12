@@ -19,6 +19,7 @@ i18n
     supportedLngs: ['en', 'he'],
     lng: 'en',
     interpolation: { escapeValue: false },
+    compatibilityJSON: 'v3',
   });
 
 export default i18n;
