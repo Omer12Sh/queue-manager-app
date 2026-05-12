@@ -2,7 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { providerApi } from '../../services/api';
 import type { ProviderProfile, AvailabilityOverride } from '../../types';
-import { Save, Building2, Clock, Megaphone, Plus, Trash2, Globe, CalendarDays, X } from 'lucide-react';
+import { Save, Building2, Megaphone, Plus, Trash2, Globe, CalendarDays, X } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -10,14 +10,19 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { SUPPORTED_LANGUAGES } from '../../i18n';
 import { format, addMonths, startOfMonth, getDaysInMonth, addDays } from 'date-fns';
 
-const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+// 30-minute time slots from 06:00 to 22:00
+const TIME_SLOTS = Array.from({ length: 33 }, (_, i) => {
+  const h = Math.floor(i / 2) + 6;
+  const m = (i % 2) * 30;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+});
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const [, setProfile] = useState<ProviderProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ businessName: '', description: '', address: '', workingHours: {} as Record<string, { open: string; close: string } | null> });
+  const [form, setForm] = useState({ businessName: '', description: '', address: '' });
   const [annForm, setAnnForm] = useState({ title: '', content: '' });
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string }[]>([]);
   const [overrides, setOverrides] = useState<AvailabilityOverride[]>([]);
@@ -39,7 +44,7 @@ export default function SettingsPage() {
         if (profileRes.status === 'fulfilled') {
           const p = profileRes.value.data;
           setProfile(p);
-          setForm({ businessName: p.businessName, description: p.description || '', address: p.address || '', workingHours: p.workingHours || {} });
+          setForm({ businessName: p.businessName, description: p.description || '', address: p.address || '' });
         }
         if (annRes.status === 'fulfilled') setAnnouncements(annRes.value.data);
         if (overrideRes.status === 'fulfilled') setOverrides(overrideRes.value.data);
@@ -63,26 +68,6 @@ export default function SettingsPage() {
       await providerApi.updateProfile({ defaultLanguage: lang });
       toast.success(t('settings.languageSaved'));
     } catch { /* language still applied locally */ }
-  };
-
-  const toggleDay = (day: string) => {
-    setForm((prev) => ({
-      ...prev,
-      workingHours: {
-        ...prev.workingHours,
-        [day]: prev.workingHours[day] ? null : { open: '09:00', close: '18:00' },
-      },
-    }));
-  };
-
-  const setHours = (day: string, field: 'open' | 'close', val: string) => {
-    setForm((prev) => ({
-      ...prev,
-      workingHours: {
-        ...prev.workingHours,
-        [day]: { ...(prev.workingHours[day] || { open: '09:00', close: '18:00' }), [field]: val },
-      },
-    }));
   };
 
   const handleAddAnn = async (e: FormEvent) => {
@@ -132,8 +117,16 @@ export default function SettingsPage() {
   const handleDeleteOverride = async (date: string) => {
     await providerApi.deleteAvailabilityOverride(date);
     setOverrides((prev) => prev.filter((o) => o.date !== date));
-    toast.success(t('settings.availabilityReset'));
+    toast.success(t('settings.availabilityRemoved'));
     setEditingDate(null);
+  };
+
+  const setSlotTime = (i: number, field: 'open' | 'close', val: string) => {
+    setEditSlots((prev) => {
+      const next = [...prev];
+      next[i] = { ...next[i], [field]: val };
+      return next;
+    });
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -194,37 +187,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Working hours (weekly defaults) */}
-      <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock size={18} className="text-brand-600" />
-          <h2 className="font-semibold text-gray-900">{t('settings.workingHours')}</h2>
-        </div>
-        <div className="space-y-2">
-          {DAYS.map((day) => {
-            const hours = form.workingHours[day];
-            return (
-              <div key={day} className="flex items-center gap-4">
-                <div className="w-6">
-                  <input type="checkbox" checked={!!hours} onChange={() => toggleDay(day)} className="rounded" />
-                </div>
-                <span className="w-24 text-sm text-gray-700">{t(`settings.days.${day}`)}</span>
-                {hours ? (
-                  <div className="flex items-center gap-2">
-                    <input type="time" className="input w-32 text-sm py-1" value={hours.open} onChange={(e) => setHours(day, 'open', e.target.value)} />
-                    <span className="text-gray-400 text-sm">—</span>
-                    <input type="time" className="input w-32 text-sm py-1" value={hours.close} onChange={(e) => setHours(day, 'close', e.target.value)} />
-                  </div>
-                ) : <span className="text-sm text-gray-400">{t('settings.closed')}</span>}
-              </div>
-            );
-          })}
-        </div>
-        <button onClick={handleSave} className="btn-primary mt-4 flex items-center gap-2">
-          <Save size={16} /> {t('settings.saveHours')}
-        </button>
-      </div>
-
       {/* Monthly calendar availability */}
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
@@ -249,7 +211,6 @@ export default function SettingsPage() {
 
         {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-1">
-          {/* blank cells for start of month */}
           {Array.from({ length: new Date(calMonth.getFullYear(), calMonth.getMonth(), 1).getDay() }).map((_, i) => (
             <div key={`blank-${i}`} />
           ))}
@@ -278,7 +239,7 @@ export default function SettingsPage() {
 
         {/* Edit overlay */}
         {editingDate && (
-          <div className="mt-4 p-4 rounded-xl border border-brand-200 bg-brand-50 space-y-3">
+          <div className="mt-4 p-4 rounded-xl border border-brand-200 bg-brand-50 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-brand-900 text-sm">{editingDate}</h3>
               <button onClick={() => setEditingDate(null)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
@@ -290,21 +251,51 @@ export default function SettingsPage() {
             </label>
 
             {!editIsOff && (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {editSlots.map((slot, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input type="time" className="input w-28 text-sm py-1" value={slot.open} onChange={(e) => {
-                      const next = [...editSlots]; next[i] = { ...next[i], open: e.target.value }; setEditSlots(next);
-                    }} />
-                    <span className="text-gray-400 text-sm">—</span>
-                    <input type="time" className="input w-28 text-sm py-1" value={slot.close} onChange={(e) => {
-                      const next = [...editSlots]; next[i] = { ...next[i], close: e.target.value }; setEditSlots(next);
-                    }} />
-                    {editSlots.length > 1 && (
-                      <button onClick={() => setEditSlots((s) => s.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600">
-                        <X size={14} />
-                      </button>
-                    )}
+                  <div key={i} className="space-y-2 p-3 rounded-xl bg-white border border-gray-100">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-gray-600">{t('settings.timeSlot')} {editSlots.length > 1 ? i + 1 : ''}</span>
+                      {editSlots.length > 1 && (
+                        <button onClick={() => setEditSlots((s) => s.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600">
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs font-medium text-gray-500">{t('settings.opensAt')}</p>
+                    <div className="overflow-x-auto pb-1">
+                      <div className="flex gap-1 min-w-max">
+                        {TIME_SLOTS.map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setSlotTime(i, 'open', t)}
+                            className={`px-2 py-1 rounded-lg text-xs border font-medium transition-colors ${
+                              slot.open === t
+                                ? 'bg-brand-600 text-white border-brand-600'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:bg-brand-50'
+                            }`}
+                          >{t}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs font-medium text-gray-500">{t('settings.closesAt')}</p>
+                    <div className="overflow-x-auto pb-1">
+                      <div className="flex gap-1 min-w-max">
+                        {TIME_SLOTS.map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setSlotTime(i, 'close', t)}
+                            className={`px-2 py-1 rounded-lg text-xs border font-medium transition-colors ${
+                              slot.close === t
+                                ? 'bg-brand-600 text-white border-brand-600'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:bg-brand-50'
+                            }`}
+                          >{t}</button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ))}
                 <button onClick={() => setEditSlots((s) => [...s, { open: '09:00', close: '18:00' }])} className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
@@ -319,7 +310,7 @@ export default function SettingsPage() {
               </button>
               {getOverride(editingDate) && (
                 <button onClick={() => handleDeleteOverride(editingDate)} className="btn-secondary text-sm py-1.5 text-red-600 border-red-200 hover:bg-red-50">
-                  {t('settings.resetToDefault')}
+                  {t('settings.removeOverride')}
                 </button>
               )}
             </div>

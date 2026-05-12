@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { serviceApi, appointmentApi, userApi } from '../../services/api';
-import type { Service, User, TimeSlot } from '../../types';
-import { Clock, ChevronRight, Check, Sparkles, Plus, Minus } from 'lucide-react';
+import { serviceApi, appointmentApi, userApi, providerApi } from '../../services/api';
+import type { Service, User, TimeSlot, AvailabilityOverride } from '../../types';
+import { Clock, ChevronRight, Check, Sparkles, Plus, Minus, CalendarX } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { format, addDays, startOfDay } from 'date-fns';
@@ -23,17 +23,24 @@ export default function BookingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [booking, setBooking] = useState(false);
+  const [overrides, setOverrides] = useState<AvailabilityOverride[]>([]);
   const { t } = useTranslation();
 
-  // Dates to show
-  const dates = Array.from({ length: 14 }, (_, i) => {
+  // Next 60 days as candidates
+  const allDates = Array.from({ length: 60 }, (_, i) => {
     const d = addDays(startOfDay(new Date()), i + 1);
     return format(d, 'yyyy-MM-dd');
   });
 
+  // Only show dates that have an active (non-off) override with at least one time window
+  const availableDates = allDates.filter((date) => {
+    const ov = overrides.find((o) => o.date === date);
+    return ov && !ov.isOff && Array.isArray(ov.slots) && (ov.slots as unknown[]).length > 0;
+  });
+
   useEffect(() => {
     // Auto-select the first (and only) service provider
-    userApi.getAll({ role: 'SERVICE_PROVIDER' }).then((res) => {
+    userApi.getAll({ role: 'SERVICE_PROVIDER' }).then(async (res) => {
       const providers: User[] = res.data;
       if (providers.length === 0) {
         setLoadError(t('booking.noProviders'));
@@ -41,12 +48,16 @@ export default function BookingPage() {
       }
       const provider = providers[0];
       setSelectedProvider(provider);
-      return serviceApi.getByProvider(provider.id).then((svcRes) => {
-        setServices(svcRes.data);
-        if (svcRes.data.length === 0) {
-          setLoadError(t('booking.noServices'));
-        }
-      });
+
+      const [svcRes, ovRes] = await Promise.allSettled([
+        serviceApi.getByProvider(provider.id),
+        providerApi.getAvailabilityOverrides(provider.id),
+      ]);
+      if (svcRes.status === 'fulfilled') {
+        setServices(svcRes.value.data);
+        if (svcRes.value.data.length === 0) setLoadError(t('booking.noServices'));
+      }
+      if (ovRes.status === 'fulfilled') setOverrides(ovRes.value.data);
     }).catch(() => {
       setLoadError(t('booking.loadFailed'));
     }).finally(() => setIsLoading(false));
@@ -191,18 +202,25 @@ export default function BookingPage() {
           {step === 'date' && (
             <div className="card">
               <h2 className="font-semibold text-gray-900 mb-4">{t('booking.chooseDate')}</h2>
-              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                {dates.map((date) => {
-                  const d = new Date(date + 'T12:00:00');
-                  return (
-                    <button key={date} onClick={() => handleSelectDate(date)} className={`p-3 rounded-xl border text-center hover:border-brand-400 hover:bg-brand-50 transition-colors ${selectedDate === date ? 'border-brand-500 bg-brand-50' : 'border-gray-200'}`}>
-                      <p className="text-xs text-gray-400">{format(d, 'EEE')}</p>
-                      <p className="text-lg font-bold text-gray-900 leading-tight">{format(d, 'd')}</p>
-                      <p className="text-xs text-gray-400">{format(d, 'MMM')}</p>
-                    </button>
-                  );
-                })}
-              </div>
+              {availableDates.length === 0 ? (
+                <div className="text-center py-10 text-gray-400">
+                  <CalendarX size={40} className="mx-auto mb-3 opacity-40" />
+                  <p className="text-sm">{t('booking.noAvailableDates')}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                  {availableDates.map((date) => {
+                    const d = new Date(date + 'T12:00:00');
+                    return (
+                      <button key={date} onClick={() => handleSelectDate(date)} className={`p-3 rounded-xl border text-center hover:border-brand-400 hover:bg-brand-50 transition-colors ${selectedDate === date ? 'border-brand-500 bg-brand-50' : 'border-gray-200'}`}>
+                        <p className="text-xs text-gray-400">{format(d, 'EEE')}</p>
+                        <p className="text-lg font-bold text-gray-900 leading-tight">{format(d, 'd')}</p>
+                        <p className="text-xs text-gray-400">{format(d, 'MMM')}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -264,4 +282,3 @@ export default function BookingPage() {
     </div>
   );
 }
-

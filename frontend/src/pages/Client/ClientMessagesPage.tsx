@@ -6,19 +6,31 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 export default function ClientMessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
+  const { notifications } = useNotifications();
 
-  useEffect(() => {
+  const loadMessages = () => {
     messageApi
       .getAll()
       .then((res) => setMessages(res.data))
       .catch(() => toast.error(t('messages.loadError')))
       .finally(() => setIsLoading(false));
-  }, [t]);
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadMessages(); }, [t]);
+
+  // Refresh when a new message notification arrives
+  const latestMsgNotif = notifications.find((n) => n.type === 'message:new' || n.type === 'broadcast:message');
+  useEffect(() => {
+    if (latestMsgNotif) loadMessages();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestMsgNotif?.id]);
 
   const handleMarkRead = async (id: string) => {
     await messageApi.markRead(id);
