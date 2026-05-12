@@ -121,20 +121,20 @@ export default function AppointmentsPage() {
                   </>
                 )}
                 {isProvider && appt.status === 'CONFIRMED' && (
-                  <button
-                    onClick={() => handleStatusChange(appt.id, 'COMPLETED')}
-                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
-                  >
-                    <Star size={13} /> {t('appointments.complete')}
-                  </button>
-                )}
-                {isProvider && ['PENDING', 'CONFIRMED'].includes(appt.status) && (
-                  <button
-                    onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
-                    className="text-xs text-red-500 hover:text-red-700 font-medium"
-                  >
-                    {/* only show a cancel link for non-pending where confirm button isn't already shown */}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleStatusChange(appt.id, 'COMPLETED')}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
+                    >
+                      <Star size={13} /> {t('appointments.complete')}
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      <XCircle size={13} /> {t('appointments.cancel')}
+                    </button>
+                  </>
                 )}
 
                 {/* Client actions */}

@@ -58,7 +58,7 @@ export const createAppointment = async (req: AuthRequest, res: Response): Promis
   const clientId = req.user!.role === 'CLIENT' ? req.user!.id : req.body.clientId;
 
   // Resolve primary and extra service IDs
-  const primaryServiceId: string = serviceId || (Array.isArray(serviceIds) && serviceIds[0]);
+  const primaryServiceId: string | undefined = serviceId || (Array.isArray(serviceIds) ? serviceIds[0] : undefined);
   const extraIds: string[] = Array.isArray(serviceIds) ? serviceIds.slice(1) : [];
 
   if (!primaryServiceId) {
