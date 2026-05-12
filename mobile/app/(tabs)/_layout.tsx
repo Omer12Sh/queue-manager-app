@@ -3,10 +3,11 @@ import { Tabs, Redirect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Alert, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabsLayout() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const { t } = useTranslation();
   const { dir } = useLanguage();
 
@@ -18,6 +19,23 @@ export default function TabsLayout() {
 
   if (!user) return <Redirect href="/login" />;
 
+  const handleLogout = () => {
+    Alert.alert(
+      t('nav.logout'),
+      t('auth.logoutConfirm', { defaultValue: 'Sign out of your account?' }),
+      [
+        { text: t('common.cancel', { defaultValue: 'Cancel' }), style: 'cancel' },
+        { text: t('nav.logout'), style: 'destructive', onPress: logout },
+      ],
+    );
+  };
+
+  const LogoutButton = () => (
+    <TouchableOpacity onPress={handleLogout} style={{ marginRight: 14 }}>
+      <Ionicons name="log-out-outline" size={24} color="#c026d3" />
+    </TouchableOpacity>
+  );
+
   return (
     <Tabs
       screenOptions={{
@@ -28,6 +46,7 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: '#fff' },
         headerTintColor: '#c026d3',
         headerTitleStyle: { fontWeight: '600' },
+        headerRight: () => <LogoutButton />,
       }}
     >
       <Tabs.Screen
@@ -35,6 +54,7 @@ export default function TabsLayout() {
         options={{
           title: t('nav.dashboard'),
           tabBarLabel: t('nav.dashboard'),
+          tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -42,17 +62,19 @@ export default function TabsLayout() {
         options={{
           title: t('nav.appointments'),
           tabBarLabel: t('nav.appointments'),
+          tabBarIcon: ({ color }) => <Ionicons name="calendar-outline" size={22} color={color} />,
         }}
       />
-      {(user.role === 'SERVICE_PROVIDER' || user.role === 'ADMIN') && (
-        <Tabs.Screen
-          name="services"
-          options={{
-            title: t('nav.services'),
-            tabBarLabel: t('nav.services'),
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="services"
+        options={{
+          title: t('nav.services'),
+          tabBarLabel: t('nav.services'),
+          tabBarIcon: ({ color }) => <Ionicons name="cut-outline" size={22} color={color} />,
+          // Hide this tab entirely for clients – they browse services during booking
+          href: user.role === 'CLIENT' ? null : undefined,
+        }}
+      />
     </Tabs>
   );
 }

@@ -18,8 +18,24 @@ export interface ProviderProfile {
   businessName: string;
   description?: string;
   address?: string;
+  avatarUrl?: string;
   defaultLanguage: string;
   workingHours: Record<string, { open: string; close: string } | null>;
+  services?: Service[];
+}
+
+export interface Announcement {
+  id: string;
+  providerId: string;
+  title: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface TimeSlot {
+  startTime: string;
+  endTime: string;
 }
 
 export interface Service {

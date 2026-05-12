@@ -267,5 +267,16 @@
   "lang": {
     "en": "English",
     "he": "עברית"
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordWeak": "Use uppercase, lowercase and a number",
+    "nameRequired": "Full name is required",
+    "nameInvalid": "Name can only contain letters and spaces",
+    "phoneInvalid": "Phone can only contain digits, spaces, + and -",
+    "loginFailed": "Login failed. Please check your connection."
   }
 }

@@ -4,18 +4,23 @@ import {
 } from 'react-native';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
+import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { appointmentApi } from '../../src/services/api';
 import type { Appointment, AppointmentStatus } from '../../src/types';
 
 export default function AppointmentsTab() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
   const { dir } = useLanguage();
   const isRTL = dir === 'rtl';
-  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left', writingDirection: dir };
+  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left' };
+  const router = useRouter();
+  const isClient = user?.role === 'CLIENT';
 
   const filters = [
     { value: '', label: t('appointments.filterAll') },
@@ -80,47 +85,67 @@ export default function AppointmentsTab() {
             </Text>
           </TouchableOpacity>
         ))}
+        {/* Book new button in filter bar for clients */}
+        {isClient && (
+          <TouchableOpacity onPress={() => router.push('/book')} style={styles.bookBtn}>
+            <Text style={styles.bookBtnText}>＋ {t('appointments.bookNew')}</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {loading ? (
         <View style={styles.centered}><ActivityIndicator size="large" color="#c026d3" /></View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
-          {appointments.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>{t('appointments.noFound')}</Text>
-              <Text style={styles.emptyDesc}>{t('appointments.noFoundDesc')}</Text>
-            </View>
-          ) : appointments.map((appt) => (
-            <View key={appt.id} style={[styles.card, isRTL && styles.cardRtl]}>
-              <View style={styles.dateBadge}>
-                <Text style={styles.dateMon}>{format(parseISO(appt.startTime), 'MMM').toUpperCase()}</Text>
-                <Text style={styles.dateDay}>{format(parseISO(appt.startTime), 'd')}</Text>
-              </View>
-              <View style={styles.info}>
-                <Text style={[styles.serviceName, textAlignStyle]}>{appt.service?.name}</Text>
-                <Text style={[styles.meta, textAlignStyle]}>
-                  {format(parseISO(appt.startTime), 'EEE, h:mm a')} · {appt.service?.durationMin}min
-                </Text>
-                <Text style={[styles.meta, textAlignStyle]}>
-                  {appt.provider?.providerProfile?.businessName || appt.provider?.name}
-                </Text>
-              </View>
-              <View style={[styles.right, isRTL && styles.rightRtl]}>
-                <View style={[styles.statusBadge, { backgroundColor: statusColor(appt.status) + '22' }]}>
-                  <Text style={[styles.statusText, { color: statusColor(appt.status) }]}>
-                    {t(`status.${appt.status}`)}
-                  </Text>
-                </View>
-                {['PENDING', 'CONFIRMED'].includes(appt.status) && (
-                  <TouchableOpacity onPress={() => handleCancel(appt.id)} style={styles.cancelBtn}>
-                    <Text style={styles.cancelText}>{t('appointments.cancel')}</Text>
+        <View style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={styles.list}>
+            {appointments.length === 0 ? (
+              <View style={styles.empty}>
+                <Text style={styles.emptyText}>{t('appointments.noFound')}</Text>
+                <Text style={styles.emptyDesc}>{t('appointments.noFoundDesc')}</Text>
+                {isClient && (
+                  <TouchableOpacity style={styles.bookEmptyBtn} onPress={() => router.push('/book')}>
+                    <Text style={styles.bookEmptyText}>{t('appointments.bookNow')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
-          ))}
-        </ScrollView>
+            ) : appointments.map((appt) => (
+              <View key={appt.id} style={[styles.card, isRTL && styles.cardRtl]}>
+                <View style={styles.dateBadge}>
+                  <Text style={styles.dateMon}>{format(parseISO(appt.startTime), 'MMM').toUpperCase()}</Text>
+                  <Text style={styles.dateDay}>{format(parseISO(appt.startTime), 'd')}</Text>
+                </View>
+                <View style={styles.info}>
+                  <Text style={[styles.serviceName, textAlignStyle]}>{appt.service?.name}</Text>
+                  <Text style={[styles.meta, textAlignStyle]}>
+                    {format(parseISO(appt.startTime), 'EEE, h:mm a')} · {appt.service?.durationMin}min
+                  </Text>
+                  <Text style={[styles.meta, textAlignStyle]}>
+                    {appt.provider?.providerProfile?.businessName || appt.provider?.name}
+                  </Text>
+                </View>
+                <View style={[styles.right, isRTL && styles.rightRtl]}>
+                  <View style={[styles.statusBadge, { backgroundColor: statusColor(appt.status) + '22' }]}>
+                    <Text style={[styles.statusText, { color: statusColor(appt.status) }]}>
+                      {t(`status.${appt.status}`)}
+                    </Text>
+                  </View>
+                  {['PENDING', 'CONFIRMED'].includes(appt.status) && (
+                    <TouchableOpacity onPress={() => handleCancel(appt.id)} style={styles.cancelBtn}>
+                      <Text style={styles.cancelText}>{t('appointments.cancel')}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* FAB for clients */}
+          {isClient && (
+            <TouchableOpacity style={styles.fab} onPress={() => router.push('/book')}>
+              <Text style={styles.fabText}>+</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
     </View>
   );
@@ -140,11 +165,22 @@ const styles = StyleSheet.create({
   filterBtnActive: { backgroundColor: '#c026d3' },
   filterText: { fontSize: 12, fontWeight: '500', color: '#374151' },
   filterTextActive: { color: '#fff' },
+  bookBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#fdf4ff',
+    borderWidth: 1,
+    borderColor: '#c026d3',
+  },
+  bookBtnText: { fontSize: 12, fontWeight: '600', color: '#a21caf' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: 16, gap: 10 },
+  list: { padding: 16, gap: 10, paddingBottom: 90 },
   empty: { padding: 40, alignItems: 'center' },
   emptyText: { fontSize: 15, fontWeight: '600', color: '#374151' },
   emptyDesc: { fontSize: 13, color: '#9ca3af', marginTop: 4, textAlign: 'center' },
+  bookEmptyBtn: { marginTop: 16, backgroundColor: '#c026d3', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 24 },
+  bookEmptyText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -177,4 +213,21 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 11, fontWeight: '600' },
   cancelBtn: { paddingVertical: 3 },
   cancelText: { fontSize: 11, color: '#ef4444', fontWeight: '500' },
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#c026d3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#c026d3',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabText: { color: '#fff', fontSize: 28, lineHeight: 30, fontWeight: '300' },
 });
+
