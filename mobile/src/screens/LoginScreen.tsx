@@ -231,21 +231,6 @@ export default function LoginScreen() {
               autoFocus
             />
 
-            <Text style={[styles.label, textAlignStyle]}>{t('auth.roleLabel')}</Text>
-            <View style={styles.roleRow}>
-              {(['CLIENT', 'SERVICE_PROVIDER'] as const).map((r) => (
-                <TouchableOpacity
-                  key={r}
-                  style={[styles.roleBtn, role === r && styles.roleBtnActive]}
-                  onPress={() => setRole(r)}
-                >
-                  <Text style={[styles.roleBtnText, role === r && styles.roleBtnTextActive]}>
-                    {r === 'CLIENT' ? t('auth.roleClient') : t('auth.roleProvider')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <TouchableOpacity
               style={[styles.btn, loading && styles.btnDisabled]}
               onPress={handleRegisterPhone}
@@ -254,6 +239,10 @@ export default function LoginScreen() {
               {loading
                 ? <ActivityIndicator color="#fff" />
                 : <Text style={styles.btnText}>{t('auth.createAccount')}</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => { setScreen('phone'); setName(''); }} style={styles.altLink}>
+              <Text style={styles.altLinkText}>{t('booking.back')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -378,14 +367,6 @@ const styles = StyleSheet.create({
   },
   devCodeLabel: { fontSize: 11, color: '#92400e', fontWeight: '500' },
   devCode: { fontSize: 28, fontWeight: '700', color: '#92400e', letterSpacing: 8, marginTop: 4 },
-  roleRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  roleBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: 10,
-    borderWidth: 2, borderColor: '#e5e7eb', alignItems: 'center', backgroundColor: '#f9fafb',
-  },
-  roleBtnActive: { borderColor: '#c026d3', backgroundColor: '#fdf4ff' },
-  roleBtnText: { fontSize: 12, color: '#6b7280', fontWeight: '500', textAlign: 'center' },
-  roleBtnTextActive: { color: '#a21caf', fontWeight: '700' },
   footerRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 16 },
   footerRowRtl: { flexDirection: 'row-reverse' },
   footerText: { fontSize: 13, color: '#6b7280' },

@@ -50,30 +50,32 @@ export default function BookScreen() {
     return ov && !ov.isOff && ov.slots.length > 0;
   });
 
+  const goBack = useCallback(() => {
+    if (step === 'service') router.back();
+    else if (step === 'date') setStep('service');
+    else if (step === 'time') setStep('date');
+    else setStep('time');
+  }, [step, router]);
+
   // Intercept hardware/gesture back to navigate steps instead of leaving the screen
   useFocusEffect(
     useCallback(() => {
-      const onBack = () => {
-        if (step === 'service') {
-          router.back();
-        } else if (step === 'date') {
-          setStep('service');
-        } else if (step === 'time') {
-          setStep('date');
-        } else if (step === 'confirm') {
-          setStep('time');
-        }
-        return true; // prevent default navigation
-      };
+      const onBack = () => { goBack(); return true; };
       const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
       return () => sub.remove();
-    }, [step, router]),
+    }, [goBack]),
   );
 
-  // Hide the native header back arrow; we handle back ourselves
+  // Set the native header back button to use our step-based goBack logic
   useEffect(() => {
-    navigation.setOptions({ headerLeft: () => null });
-  }, [navigation]);
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity onPress={goBack} style={{ paddingHorizontal: 12 }}>
+          <Text style={{ fontSize: 16, color: '#c026d3', fontWeight: '600' }}>{'‹ ' + t('booking.back')}</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, goBack, t]);
 
   // Load provider, services and availability on mount
   useEffect(() => {
@@ -147,12 +149,6 @@ export default function BookScreen() {
     }
   };
 
-  const goBack = () => {
-    if (step === 'service') router.back();
-    else if (step === 'date') setStep('service');
-    else if (step === 'time') setStep('date');
-    else setStep('time');
-  };
 
   const stepOrder: Step[] = ['service', 'date', 'time', 'confirm'];
   const stepLabels = [
@@ -209,6 +205,7 @@ export default function BookScreen() {
       <View style={[styles.container, { direction: dir }]}>
         <StepIndicator />
         <Text style={[styles.stepTitle, textAlignStyle]}>{t('booking.chooseService')}</Text>
+        <BackBtn label={t('booking.back')} />
         <Text style={[styles.stepHint, textAlignStyle]}>{t('booking.chooseServiceHint')}</Text>
         <ScrollView contentContainerStyle={styles.list}>
           {services.map((svc) => {

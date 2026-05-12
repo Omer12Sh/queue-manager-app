@@ -69,7 +69,7 @@ export const providerApi = {
   updateAnnouncement: (id: string, data: object) => api.put(`/provider/announcements/${id}`, data),
   deleteAnnouncement: (id: string) => api.delete(`/provider/announcements/${id}`),
   getAvailabilityOverrides: (userId: string) => api.get(`/provider/availability/${userId}`),
-  upsertAvailabilityOverride: (data: { date: string; isOff: boolean; slots: { open: string; close: string }[] }) =>
+  upsertAvailabilityOverride: (data: { date: string; isOff: boolean; slots: string[] }) =>
     api.put('/provider/availability', data),
   deleteAvailabilityOverride: (date: string) => api.delete(`/provider/availability/${date}`),
 };
