@@ -50,27 +50,47 @@ export const getAppointment = async (req: AuthRequest, res: Response): Promise<v
   res.json(appointment);
 };
 
+const SAFETY_BUFFER_MS = 10 * 60 * 1000; // 10-minute buffer between appointments
+
 export const createAppointment = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { providerId, serviceId, startTime, notes } = req.body;
+  // Accept either a single serviceId or an array serviceIds[]
+  const { providerId, serviceId, serviceIds, startTime, notes } = req.body;
   const clientId = req.user!.role === 'CLIENT' ? req.user!.id : req.body.clientId;
 
-  const service = await prisma.service.findUnique({ where: { id: serviceId } });
-  if (!service) {
+  // Resolve primary and extra service IDs
+  const primaryServiceId: string = serviceId || (Array.isArray(serviceIds) && serviceIds[0]);
+  const extraIds: string[] = Array.isArray(serviceIds) ? serviceIds.slice(1) : [];
+
+  if (!primaryServiceId) {
+    res.status(400).json({ message: 'serviceId or serviceIds is required' });
+    return;
+  }
+
+  const primaryService = await prisma.service.findUnique({ where: { id: primaryServiceId } });
+  if (!primaryService) {
     res.status(404).json({ message: 'Service not found' });
     return;
   }
 
-  const start = new Date(startTime);
-  const end = new Date(start.getTime() + service.durationMin * 60 * 1000);
+  // Calculate total duration from all selected services
+  let totalDuration = primaryService.durationMin;
+  if (extraIds.length > 0) {
+    const extraServices = await prisma.service.findMany({ where: { id: { in: extraIds } } });
+    totalDuration += extraServices.reduce((s: number, svc: { durationMin: number }) => s + svc.durationMin, 0);
+  }
 
-  // Check for conflicts
+  const start = new Date(startTime);
+  const end = new Date(start.getTime() + totalDuration * 60 * 1000);
+
+  // Check for conflicts (include safety buffer)
+  const bufferEnd = new Date(end.getTime() + SAFETY_BUFFER_MS);
   const conflict = await prisma.appointment.findFirst({
     where: {
       providerId,
       status: { in: ['PENDING', 'CONFIRMED'] },
       OR: [
-        { startTime: { gte: start, lt: end } },
-        { endTime: { gt: start, lte: end } },
+        { startTime: { gte: start, lt: bufferEnd } },
+        { endTime: { gt: start, lte: bufferEnd } },
         { startTime: { lte: start }, endTime: { gte: end } },
       ],
     },
@@ -82,7 +102,15 @@ export const createAppointment = async (req: AuthRequest, res: Response): Promis
   }
 
   const appointment = await prisma.appointment.create({
-    data: { clientId, providerId, serviceId, startTime: start, endTime: end, notes },
+    data: {
+      clientId,
+      providerId,
+      serviceId: primaryServiceId,
+      extraServiceIds: extraIds,
+      startTime: start,
+      endTime: end,
+      notes,
+    },
     include: {
       client: { select: { id: true, name: true, email: true } },
       service: true,
@@ -96,7 +124,7 @@ export const createAppointment = async (req: AuthRequest, res: Response): Promis
     console.warn('Redis queue unavailable:', err);
   }
 
-  // Emit real-time update
+  // Emit real-time update to provider
   const io = req.app.get('io');
   if (io) {
     io.to(`user:${providerId}`).emit('appointment:new', appointment);
@@ -121,7 +149,10 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response): 
 
   const io = req.app.get('io');
   if (io) {
+    // Notify client about the status change
     io.to(`user:${appointment.clientId}`).emit('appointment:updated', appointment);
+    // Notify provider too (if someone else triggered the change)
+    io.to(`user:${appointment.providerId}`).emit('appointment:updated', appointment);
   }
 
   res.json(appointment);
@@ -151,6 +182,7 @@ export const rescheduleAppointment = async (req: AuthRequest, res: Response): Pr
   const io = req.app.get('io');
   if (io) {
     io.to(`user:${appointment.clientId}`).emit('appointment:rescheduled', appointment);
+    io.to(`user:${appointment.providerId}`).emit('appointment:updated', appointment);
   }
 
   res.json(appointment);
@@ -163,21 +195,73 @@ export const deleteAppointment = async (req: AuthRequest, res: Response): Promis
 
 export const getAvailableSlots = async (req: AuthRequest, res: Response): Promise<void> => {
   const { providerId } = req.params;
-  const { date, serviceId } = req.query;
+  const { date, serviceId, serviceIds } = req.query;
 
-  if (!date || !serviceId) {
-    res.status(400).json({ message: 'date and serviceId are required' });
+  if (!date) {
+    res.status(400).json({ message: 'date is required' });
     return;
   }
 
-  const service = await prisma.service.findUnique({ where: { id: serviceId as string } });
-  if (!service) {
-    res.status(404).json({ message: 'Service not found' });
+  // Resolve service IDs from query
+  const primaryId = serviceId as string | undefined;
+  const extraIdList: string[] = serviceIds
+    ? (Array.isArray(serviceIds) ? serviceIds as string[] : (serviceIds as string).split(','))
+    : [];
+  const allServiceIds = [...(primaryId ? [primaryId] : []), ...extraIdList];
+
+  if (allServiceIds.length === 0) {
+    res.status(400).json({ message: 'serviceId or serviceIds is required' });
     return;
   }
 
-  const dayStart = new Date(`${date}T00:00:00Z`);
-  const dayEnd = new Date(`${date}T23:59:59Z`);
+  const services = await prisma.service.findMany({ where: { id: { in: allServiceIds } } });
+  if (services.length === 0) {
+    res.status(404).json({ message: 'Services not found' });
+    return;
+  }
+
+  const totalDurationMin = services.reduce((s: number, svc: { durationMin: number }) => s + svc.durationMin, 0);
+  const dateStr = date as string;
+
+  // Check for per-date availability override
+  const providerProfile = await prisma.providerProfile.findFirst({ where: { userId: providerId } });
+  if (!providerProfile) {
+    res.status(404).json({ message: 'Provider not found' });
+    return;
+  }
+
+  const override = await prisma.availabilityOverride.findUnique({
+    where: { providerId_date: { providerId: providerProfile.id, date: dateStr } },
+  });
+
+  // If day marked as off, return empty slots
+  if (override?.isOff) {
+    res.json([]);
+    return;
+  }
+
+  // Determine working windows for the day
+  let windows: { open: string; close: string }[] = [];
+  if (override && !override.isOff) {
+    // Use override slots
+    windows = (override.slots as { open: string; close: string }[]) || [];
+  } else {
+    // Fall back to weekly working hours
+    const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const jsDay = new Date(dateStr + 'T12:00:00Z').getDay();
+    const dayKey = dayNames[jsDay];
+    const hours = (providerProfile.workingHours as Record<string, { open: string; close: string } | null>)[dayKey];
+    if (hours) windows = [hours];
+  }
+
+  if (windows.length === 0) {
+    // Provider not working on this day
+    res.json([]);
+    return;
+  }
+
+  const dayStart = new Date(`${dateStr}T00:00:00Z`);
+  const dayEnd = new Date(`${dateStr}T23:59:59Z`);
 
   const booked = await prisma.appointment.findMany({
     where: {
@@ -188,21 +272,27 @@ export const getAvailableSlots = async (req: AuthRequest, res: Response): Promis
     select: { startTime: true, endTime: true },
   });
 
-  // Generate 30-min slots from 09:00 to 18:00
-  const slots = [];
-  const slotDuration = service.durationMin * 60 * 1000;
-  let cursor = new Date(`${date}T09:00:00Z`);
-  const endOfDay = new Date(`${date}T18:00:00Z`);
+  const slotDurationMs = totalDurationMin * 60 * 1000;
+  const bufferMs = SAFETY_BUFFER_MS;
+  const slots: { startTime: string; endTime: string }[] = [];
 
-  while (cursor.getTime() + slotDuration <= endOfDay.getTime()) {
-    const slotEnd = new Date(cursor.getTime() + slotDuration);
-    const isBooked = booked.some(
-      (b: { startTime: Date; endTime: Date }) => b.startTime < slotEnd && b.endTime > cursor,
-    );
-    if (!isBooked) {
-      slots.push({ startTime: cursor.toISOString(), endTime: slotEnd.toISOString() });
+  for (const window of windows) {
+    const winStart = new Date(`${dateStr}T${window.open}:00Z`);
+    const winEnd = new Date(`${dateStr}T${window.close}:00Z`);
+
+    let cursor = winStart;
+    while (cursor.getTime() + slotDurationMs <= winEnd.getTime()) {
+      const slotEnd = new Date(cursor.getTime() + slotDurationMs);
+      // Check if this slot (plus buffer) conflicts with any booked appointment
+      const isBooked = booked.some(
+        (b: { startTime: Date; endTime: Date }) =>
+          b.startTime < new Date(slotEnd.getTime() + bufferMs) && b.endTime > cursor,
+      );
+      if (!isBooked) {
+        slots.push({ startTime: cursor.toISOString(), endTime: slotEnd.toISOString() });
+      }
+      cursor = new Date(cursor.getTime() + 30 * 60 * 1000); // advance 30 min
     }
-    cursor = new Date(cursor.getTime() + 30 * 60 * 1000); // advance 30 min
   }
 
   res.json(slots);

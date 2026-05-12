@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { appointmentApi } from '../../services/api';
 import type { Appointment, AppointmentStatus } from '../../types';
-import { PlusCircle, Filter } from 'lucide-react';
+import { PlusCircle, Filter, CheckCircle, XCircle, Star } from 'lucide-react';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
@@ -37,16 +37,18 @@ export default function AppointmentsPage() {
 
   useEffect(() => { setIsLoading(true); load(); }, [filter]);
 
-  const handleCancel = async (id: string) => {
-    if (!confirm(t('appointments.cancelConfirm'))) return;
+  const handleStatusChange = async (id: string, status: string) => {
+    if (status === 'CANCELLED' && !confirm(t('appointments.cancelConfirm'))) return;
     try {
-      await appointmentApi.updateStatus(id, 'CANCELLED');
-      setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'CANCELLED' as AppointmentStatus } : a)));
-      toast.success(t('appointments.cancelSuccess'));
-    } catch { toast.error(t('appointments.cancelFailed')); }
+      await appointmentApi.updateStatus(id, status);
+      setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status: status as AppointmentStatus } : a)));
+      toast.success(t('appointments.statusUpdated'));
+    } catch { toast.error(t('appointments.statusUpdateFailed')); }
   };
 
   if (isLoading) return <LoadingSpinner />;
+
+  const isProvider = user?.role === 'SERVICE_PROVIDER';
 
   return (
     <div className="space-y-6">
@@ -93,12 +95,51 @@ export default function AppointmentsPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900">{appt.service?.name}</p>
                 <p className="text-gray-500 text-sm">{format(parseISO(appt.startTime), 'EEEE, h:mm a')} · {appt.service?.durationMin}min</p>
-                <p className="text-gray-400 text-xs mt-0.5">{appt.provider?.providerProfile?.businessName || appt.provider?.name}</p>
+                {isProvider
+                  ? <p className="text-gray-400 text-xs mt-0.5">{appt.client?.name} · {appt.client?.email}</p>
+                  : <p className="text-gray-400 text-xs mt-0.5">{appt.provider?.providerProfile?.businessName || appt.provider?.name}</p>
+                }
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge status={appt.status} />
-                {['PENDING', 'CONFIRMED'].includes(appt.status) && (
-                  <button onClick={() => handleCancel(appt.id)} className="text-xs text-red-500 hover:text-red-700 font-medium">
+
+                {/* Provider actions */}
+                {isProvider && appt.status === 'PENDING' && (
+                  <>
+                    <button
+                      onClick={() => handleStatusChange(appt.id, 'CONFIRMED')}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      <CheckCircle size={13} /> {t('appointments.confirm')}
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      <XCircle size={13} /> {t('appointments.cancel')}
+                    </button>
+                  </>
+                )}
+                {isProvider && appt.status === 'CONFIRMED' && (
+                  <button
+                    onClick={() => handleStatusChange(appt.id, 'COMPLETED')}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
+                  >
+                    <Star size={13} /> {t('appointments.complete')}
+                  </button>
+                )}
+                {isProvider && ['PENDING', 'CONFIRMED'].includes(appt.status) && (
+                  <button
+                    onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
+                    className="text-xs text-red-500 hover:text-red-700 font-medium"
+                  >
+                    {/* only show a cancel link for non-pending where confirm button isn't already shown */}
+                  </button>
+                )}
+
+                {/* Client actions */}
+                {!isProvider && ['PENDING', 'CONFIRMED'].includes(appt.status) && (
+                  <button onClick={() => handleStatusChange(appt.id, 'CANCELLED')} className="text-xs text-red-500 hover:text-red-700 font-medium">
                     {t('appointments.cancel')}
                   </button>
                 )}

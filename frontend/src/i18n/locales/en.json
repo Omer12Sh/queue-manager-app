@@ -74,6 +74,10 @@
     "bookNow": "Book Now",
     "cancel": "Cancel",
     "cancelConfirm": "Cancel this appointment?",
+    "statusUpdated": "Status updated",
+    "statusUpdateFailed": "Failed to update status",
+    "confirm": "Confirm",
+    "complete": "Complete",
     "cancelSuccess": "Appointment cancelled",
     "cancelFailed": "Failed to cancel"
   },
@@ -98,6 +102,10 @@
     "priceLabel": "Price",
     "notesLabel": "Notes (optional)",
     "notesPlaceholder": "Any special requests…",
+    "chooseServiceHint": "Select one or more services",
+    "noServiceSelected": "Please select at least one service",
+    "servicesSelected": "services selected",
+    "next": "Next",
     "back": "← Back",
     "backToDates": "← Back to dates",
     "confirmButton": "✓ Confirm Booking",
@@ -138,6 +146,9 @@
     "colDateTime": "Date & Time",
     "colPrice": "Price",
     "colStatus": "Status",
+    "colActions": "Actions",
+    "dailyExpected": "Today's Expected",
+    "allTimeEarned": "All-Time Earned",
     "noAppointments": "No appointments yet"
   },
   "services": {
@@ -209,6 +220,15 @@
     "annCreated": "Announcement created",
     "annDeleted": "Announcement deleted",
     "annFailed": "Failed to create announcement",
+    "monthlyAvailability": "Monthly Availability",
+    "monthlyAvailabilityHint": "Click any date to override the default weekly schedule for that specific day. Green = custom hours, Red = day off.",
+    "calendarLegend": "Green = custom availability · Red = day off · Default = weekly schedule applies",
+    "markDayOff": "Mark as day off (no appointments)",
+    "addSlot": "Add time window",
+    "saveDate": "Save date",
+    "resetToDefault": "Reset to weekly default",
+    "availabilityUpdated": "Availability updated",
+    "availabilityReset": "Availability reset to weekly default",
     "languagePreference": "Language Preference",
     "languageLabel": "Default language for clients",
     "languageSaved": "Language preference saved",
@@ -252,6 +272,11 @@
     "toggleFailed": "Failed to update user",
     "userActivated": "User activated",
     "userDeactivated": "User deactivated"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all read"
   },
   "roles": {
     "ADMIN": "Admin",

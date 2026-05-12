@@ -34,6 +34,8 @@ export default function LoginPage() {
     return null;
   }
 
+  const showDemo = import.meta.env.VITE_SHOW_DEMO === 'true';
+
   const demoAccounts = [
     { role: t('roles.ADMIN'), email: 'admin@queue.app', password: 'Admin123!' },
     { role: t('roles.SERVICE_PROVIDER'), email: 'provider@queue.app', password: 'Provider123!' },
@@ -110,6 +112,7 @@ export default function LoginPage() {
           </p>
 
           {/* Demo accounts */}
+          {showDemo && (
           <div className="mt-6 pt-6 border-t border-gray-100">
             <p className="text-xs text-gray-400 text-center mb-3">{t('auth.demoAccounts')}</p>
             <div className="grid grid-cols-3 gap-2">
@@ -125,6 +128,7 @@ export default function LoginPage() {
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>

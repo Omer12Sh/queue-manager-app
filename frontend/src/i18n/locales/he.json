@@ -74,6 +74,10 @@
     "bookNow": "הזמן עכשיו",
     "cancel": "בטל",
     "cancelConfirm": "לבטל פגישה זו?",
+    "statusUpdated": "הסטטוס עודכן",
+    "statusUpdateFailed": "עדכון הסטטוס נכשל",
+    "confirm": "אשר",
+    "complete": "השלם",
     "cancelSuccess": "הפגישה בוטלה",
     "cancelFailed": "הביטול נכשל"
   },
@@ -98,6 +102,10 @@
     "priceLabel": "מחיר",
     "notesLabel": "הערות (אופציונלי)",
     "notesPlaceholder": "בקשות מיוחדות…",
+    "chooseServiceHint": "בחר שירות אחד או יותר",
+    "noServiceSelected": "אנא בחר לפחות שירות אחד",
+    "servicesSelected": "שירותים נבחרו",
+    "next": "הבא",
     "back": "← חזור",
     "backToDates": "← חזור לתאריכים",
     "confirmButton": "✓ אישור הזמנה",
@@ -138,6 +146,9 @@
     "colDateTime": "תאריך ושעה",
     "colPrice": "מחיר",
     "colStatus": "סטטוס",
+    "colActions": "פעולות",
+    "dailyExpected": "צפוי היום",
+    "allTimeEarned": "הכנסה כוללת",
     "noAppointments": "אין פגישות עדיין"
   },
   "services": {
@@ -209,6 +220,15 @@
     "annCreated": "ההודעה פורסמה",
     "annDeleted": "ההודעה נמחקה",
     "annFailed": "פרסום ההודעה נכשל",
+    "monthlyAvailability": "זמינות חודשית",
+    "monthlyAvailabilityHint": "לחץ על תאריך כדי לעקוף את לוח הזמנים השבועי לאותו יום. ירוק = שעות מותאמות, אדום = יום חופש.",
+    "calendarLegend": "ירוק = זמינות מותאמת · אדום = יום חופש · ברירת מחדל = לוח שבועי",
+    "markDayOff": "סמן כיום חופש (ללא פגישות)",
+    "addSlot": "הוסף חלון זמן",
+    "saveDate": "שמור תאריך",
+    "resetToDefault": "אפס לברירת מחדל שבועית",
+    "availabilityUpdated": "הזמינות עודכנה",
+    "availabilityReset": "הזמינות אופסה לברירת מחדל שבועית",
     "languagePreference": "העדפת שפה",
     "languageLabel": "שפת ברירת מחדל ללקוחות",
     "languageSaved": "העדפת השפה נשמרה",
@@ -252,6 +272,11 @@
     "toggleFailed": "עדכון המשתמש נכשל",
     "userActivated": "המשתמש הופעל",
     "userDeactivated": "המשתמש הושבת"
+  },
+  "notifications": {
+    "title": "התראות",
+    "empty": "אין התראות עדיין",
+    "markAllRead": "סמן הכל כנקרא"
   },
   "roles": {
     "ADMIN": "מנהל",
