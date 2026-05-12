@@ -30,6 +30,12 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
+function RequireClient({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (user && user.role !== 'CLIENT') return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <LoadingSpinner size="lg" />;
@@ -41,7 +47,7 @@ function AppRoutes() {
 
       <Route path="/dashboard" element={<RequireAuth><DashboardRouter /></RequireAuth>} />
       <Route path="/appointments" element={<RequireAuth><AppointmentsPage /></RequireAuth>} />
-      <Route path="/appointments/book" element={<RequireAuth><BookingPage /></RequireAuth>} />
+      <Route path="/appointments/book" element={<RequireAuth><RequireClient><BookingPage /></RequireClient></RequireAuth>} />
       <Route path="/appointments/history" element={<RequireAuth><AppointmentsPage /></RequireAuth>} />
       <Route path="/services" element={<RequireAuth><ServicesPage /></RequireAuth>} />
       <Route path="/messages" element={<RequireAuth><MessagesPage /></RequireAuth>} />

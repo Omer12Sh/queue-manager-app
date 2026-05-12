@@ -8,12 +8,11 @@ import toast from 'react-hot-toast';
 import { format, addDays, startOfDay } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 
-type Step = 'provider' | 'service' | 'date' | 'time' | 'confirm';
+type Step = 'service' | 'date' | 'time' | 'confirm';
 
 export default function BookingPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<Step>('provider');
-  const [providers, setProviders] = useState<User[]>([]);
+  const [step, setStep] = useState<Step>('service');
   const [services, setServices] = useState<Service[]>([]);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<User | null>(null);
@@ -21,7 +20,8 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [notes, setNotes] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [booking, setBooking] = useState(false);
   const { t } = useTranslation();
 
@@ -32,17 +32,25 @@ export default function BookingPage() {
   });
 
   useEffect(() => {
-    userApi.getAll({ role: 'SERVICE_PROVIDER' }).then((res) => setProviders(res.data));
-  }, []);
-
-  const handleSelectProvider = async (provider: User) => {
-    setSelectedProvider(provider);
-    setIsLoading(true);
-    const res = await serviceApi.getByProvider(provider.id);
-    setServices(res.data);
-    setIsLoading(false);
-    setStep('service');
-  };
+    // Auto-select the first (and only) service provider
+    userApi.getAll({ role: 'SERVICE_PROVIDER' }).then((res) => {
+      const providers: User[] = res.data;
+      if (providers.length === 0) {
+        setLoadError(t('booking.noProviders'));
+        return;
+      }
+      const provider = providers[0];
+      setSelectedProvider(provider);
+      return serviceApi.getByProvider(provider.id).then((svcRes) => {
+        setServices(svcRes.data);
+        if (svcRes.data.length === 0) {
+          setLoadError(t('booking.noServices'));
+        }
+      });
+    }).catch(() => {
+      setLoadError(t('booking.loadFailed'));
+    }).finally(() => setIsLoading(false));
+  }, [t]);
 
   const handleSelectService = (svc: Service) => {
     setSelectedService(svc);
@@ -83,7 +91,6 @@ export default function BookingPage() {
   };
 
   const stepLabels: { step: Step; label: string }[] = [
-    { step: 'provider', label: t('booking.stepProvider') },
     { step: 'service', label: t('booking.stepService') },
     { step: 'date', label: t('booking.stepDate') },
     { step: 'time', label: t('booking.stepTime') },
@@ -111,28 +118,12 @@ export default function BookingPage() {
         ))}
       </div>
 
-      {isLoading ? <LoadingSpinner /> : (
+      {isLoading ? <LoadingSpinner /> : loadError ? (
+        <div className="card text-center py-10 text-gray-400">
+          <p>{loadError}</p>
+        </div>
+      ) : (
         <>
-          {/* Step: Provider */}
-          {step === 'provider' && (
-            <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">{t('booking.chooseProvider')}</h2>
-              <div className="space-y-3">
-                {providers.map((p) => (
-                  <button key={p.id} onClick={() => handleSelectProvider(p)} className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors text-left">
-                    <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-lg">{p.name.charAt(0)}</div>
-                    <div>
-                      <p className="font-medium text-gray-900">{p.providerProfile?.businessName || p.name}</p>
-                      {p.providerProfile?.description && <p className="text-sm text-gray-500 line-clamp-1">{p.providerProfile.description}</p>}
-                    </div>
-                    <ChevronRight size={18} className="ltr:ml-auto rtl:mr-auto rtl:rotate-180 text-gray-400" />
-                  </button>
-                ))}
-                {providers.length === 0 && <p className="text-gray-400 text-sm text-center py-8">{t('booking.noProviders')}</p>}
-              </div>
-            </div>
-          )}
-
           {/* Step: Service */}
           {step === 'service' && (
             <div className="card">

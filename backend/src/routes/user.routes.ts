@@ -4,7 +4,7 @@ import { getUsers, getUser, updateUser, deactivateUser } from '../controllers/us
 
 const router = Router();
 router.use(authenticate);
-router.get('/', requireRole('ADMIN', 'SERVICE_PROVIDER'), getUsers);
+router.get('/', requireRole('ADMIN', 'SERVICE_PROVIDER', 'CLIENT'), getUsers);
 router.get('/:id', getUser);
 router.put('/:id', updateUser);
 router.delete('/:id', requireRole('ADMIN'), deactivateUser);

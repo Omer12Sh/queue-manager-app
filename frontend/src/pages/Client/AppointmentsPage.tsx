@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { appointmentApi } from '../../services/api';
 import type { Appointment, AppointmentStatus } from '../../types';
 import { PlusCircle, Filter } from 'lucide-react';
@@ -11,6 +12,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
 export default function AppointmentsPage() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -53,9 +55,11 @@ export default function AppointmentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('appointments.title')}</h1>
           <p className="text-gray-500 text-sm mt-1">{t('appointments.subtitle')}</p>
         </div>
-        <Link to="/appointments/book" className="btn-primary flex items-center gap-2">
-          <PlusCircle size={16} /> {t('appointments.bookNew')}
-        </Link>
+          {user?.role === 'CLIENT' && (
+            <Link to="/appointments/book" className="btn-primary flex items-center gap-2">
+              <PlusCircle size={16} /> {t('appointments.bookNew')}
+            </Link>
+          )}
       </div>
 
       {/* Filters */}
@@ -76,7 +80,7 @@ export default function AppointmentsPage() {
         <EmptyState
           title={t('appointments.noFound')}
           description={t('appointments.noFoundDesc')}
-          action={<Link to="/appointments/book" className="btn-primary">{t('appointments.bookNow')}</Link>}
+          action={user?.role === 'CLIENT' ? <Link to="/appointments/book" className="btn-primary">{t('appointments.bookNow')}</Link> : undefined}
         />
       ) : (
         <div className="space-y-3">
