@@ -178,6 +178,7 @@
   "messages": {
     "title": "Messages",
     "subtitle": "Send messages and updates to your clients",
+    "clientSubtitle": "Messages from your service provider",
     "sendMessage": "Send Message",
     "broadcast": "Broadcast",
     "inbox": "Inbox",
@@ -195,7 +196,8 @@
     "sendSuccess": "Message sent",
     "sendFailed": "Failed to send message",
     "noMessages": "No messages yet",
-    "markRead": "Mark as read"
+    "markRead": "Mark as read",
+    "loadError": "Failed to load messages"
   },
   "settings": {
     "title": "Settings",

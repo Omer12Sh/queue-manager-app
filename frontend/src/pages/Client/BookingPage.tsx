@@ -73,11 +73,16 @@ export default function BookingPage() {
   const handleSelectDate = async (date: string) => {
     setSelectedDate(date);
     setIsLoading(true);
-    const serviceIds = selectedServices.map((s) => s.id);
-    const res = await appointmentApi.getAvailableSlots(selectedProvider!.id, date, serviceIds);
-    setSlots(res.data);
-    setIsLoading(false);
-    setStep('time');
+    try {
+      const serviceIds = selectedServices.map((s) => s.id);
+      const res = await appointmentApi.getAvailableSlots(selectedProvider!.id, date, serviceIds);
+      setSlots(res.data);
+      setStep('time');
+    } catch {
+      toast.error(t('booking.loadFailed'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSelectSlot = (slot: TimeSlot) => {

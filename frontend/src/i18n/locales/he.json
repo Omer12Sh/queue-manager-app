@@ -178,6 +178,7 @@
   "messages": {
     "title": "הודעות",
     "subtitle": "שלח הודעות ועדכונים ללקוחות שלך",
+    "clientSubtitle": "הודעות מנותן השירות שלך",
     "sendMessage": "שלח הודעה",
     "broadcast": "שידור",
     "inbox": "דואר נכנס",
@@ -195,7 +196,8 @@
     "sendSuccess": "ההודעה נשלחה",
     "sendFailed": "שליחת ההודעה נכשלה",
     "noMessages": "אין הודעות עדיין",
-    "markRead": "סמן כנקרא"
+    "markRead": "סמן כנקרא",
+    "loadError": "טעינת ההודעות נכשלה"
   },
   "settings": {
     "title": "הגדרות",

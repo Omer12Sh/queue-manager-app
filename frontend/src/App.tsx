@@ -11,10 +11,18 @@ import ProviderDashboard from './pages/ServiceProvider/ProviderDashboard';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AppointmentsPage from './pages/Client/AppointmentsPage';
 import BookingPage from './pages/Client/BookingPage';
+import ClientMessagesPage from './pages/Client/ClientMessagesPage';
 import ServicesPage from './pages/ServiceProvider/ServicesPage';
 import MessagesPage from './pages/ServiceProvider/MessagesPage';
 import SettingsPage from './pages/ServiceProvider/SettingsPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
+
+function MessagesRouter() {
+  const { user } = useAuth();
+  if (!user) return null;
+  if (user.role === 'CLIENT') return <ClientMessagesPage />;
+  return <MessagesPage />;
+}
 
 function DashboardRouter() {
   const { user } = useAuth();
@@ -51,7 +59,7 @@ function AppRoutes() {
       <Route path="/appointments/book" element={<RequireAuth><RequireClient><BookingPage /></RequireClient></RequireAuth>} />
       <Route path="/appointments/history" element={<RequireAuth><AppointmentsPage /></RequireAuth>} />
       <Route path="/services" element={<RequireAuth><ServicesPage /></RequireAuth>} />
-      <Route path="/messages" element={<RequireAuth><MessagesPage /></RequireAuth>} />
+      <Route path="/messages" element={<RequireAuth><MessagesRouter /></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
       <Route path="/users" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
 

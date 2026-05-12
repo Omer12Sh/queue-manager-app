@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SUPPORTED_LANGUAGES } from '../../i18n';
-import i18n from '../../i18n';
 import { format, addMonths, startOfMonth, getDaysInMonth, addDays } from 'date-fns';
 
 const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -41,7 +40,6 @@ export default function SettingsPage() {
           const p = profileRes.value.data;
           setProfile(p);
           setForm({ businessName: p.businessName, description: p.description || '', address: p.address || '', workingHours: p.workingHours || {} });
-          if (p.defaultLanguage) i18n.changeLanguage(p.defaultLanguage);
         }
         if (annRes.status === 'fulfilled') setAnnouncements(annRes.value.data);
         if (overrideRes.status === 'fulfilled') setOverrides(overrideRes.value.data);

@@ -41,7 +41,7 @@ export const appointmentApi = {
   updateStatus: (id: string, status: string) => api.patch(`/appointments/${id}/status`, { status }),
   reschedule: (id: string, startTime: string) => api.patch(`/appointments/${id}/reschedule`, { startTime }),
   getAvailableSlots: (providerId: string, date: string, serviceIds: string[]) =>
-    api.get(`/appointments/slots/${providerId}`, { params: { date, serviceIds } }),
+    api.get(`/appointments/slots/${providerId}`, { params: { date, serviceIds: serviceIds.join(',') } }),
 };
 
 // Services
