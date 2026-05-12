@@ -35,7 +35,7 @@ export default function BookingPage() {
   // Only show dates that have an active (non-off) override with at least one time window
   const availableDates = allDates.filter((date) => {
     const ov = overrides.find((o) => o.date === date);
-    return ov && !ov.isOff && Array.isArray(ov.slots) && (ov.slots as unknown[]).length > 0;
+    return ov && !ov.isOff && ov.slots.length > 0;
   });
 
   useEffect(() => {
