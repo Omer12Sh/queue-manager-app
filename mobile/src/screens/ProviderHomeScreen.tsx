@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, ActivityIndicator,
+  View, Text, ScrollView, StyleSheet, ActivityIndicator, type TextStyle,
 } from 'react-native';
 import { format, parseISO, isToday } from 'date-fns';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,7 @@ export default function ProviderHomeScreen() {
   const { t } = useTranslation();
   const { dir } = useLanguage();
   const isRTL = dir === 'rtl';
-  const textAlignStyle = { textAlign: isRTL ? 'right' : 'left' as const, writingDirection: dir };
+  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left', writingDirection: dir };
 
   useEffect(() => {
     Promise.allSettled([

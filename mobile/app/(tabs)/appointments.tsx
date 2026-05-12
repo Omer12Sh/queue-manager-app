@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, type TextStyle,
 } from 'react-native';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ export default function AppointmentsTab() {
   const { t } = useTranslation();
   const { dir } = useLanguage();
   const isRTL = dir === 'rtl';
-  const textAlignStyle = { textAlign: isRTL ? 'right' : 'left' as const, writingDirection: dir };
+  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left', writingDirection: dir };
 
   const filters = [
     { value: '', label: t('appointments.filterAll') },
@@ -25,16 +25,14 @@ export default function AppointmentsTab() {
     { value: 'CANCELLED', label: t('appointments.filterCancelled') },
   ];
 
-  const load = () => {
+  useEffect(() => {
     setLoading(true);
     const params: Record<string, string> = {};
     if (filter) params.status = filter;
     appointmentApi.getAll(params)
       .then((res) => setAppointments(res.data))
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [filter]);
+  }, [filter]);
 
   const handleCancel = (id: string) => {
     Alert.alert(

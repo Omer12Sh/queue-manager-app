@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, type TextStyle,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,7 @@ export default function RegisterScreen() {
   const { t } = useTranslation();
   const { language, setLanguage, dir } = useLanguage();
   const isRTL = dir === 'rtl';
-  const textAlignStyle = { textAlign: isRTL ? 'right' : 'left' as const, writingDirection: dir };
+  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left', writingDirection: dir };
   const [form, setForm] = useState({
     name: '',
     email: '',
