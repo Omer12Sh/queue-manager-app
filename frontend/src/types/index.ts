@@ -91,5 +91,5 @@ export interface AvailabilityOverride {
   providerId: string;
   date: string;
   isOff: boolean;
-  slots: { open: string; close: string }[];
+  slots: string[];
 }

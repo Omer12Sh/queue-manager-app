@@ -11,11 +11,19 @@ import { providerApi } from '../../src/services/api';
 import { SUPPORTED_LANGUAGES } from '../../src/i18n';
 import type { AvailabilityOverride } from '../../src/types';
 
-const TIME_SLOTS = Array.from({ length: 33 }, (_, i) => {
-  const h = Math.floor(i / 2) + 6;
-  const m = (i % 2) * 30;
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-});
+const INTERVAL_OPTIONS = [15, 20, 30, 45, 60];
+
+const generateTimeSlots = (intervalMin: number): string[] => {
+  const slots: string[] = [];
+  const start = 6 * 60;
+  const end = 22 * 60;
+  for (let m = start; m < end; m += intervalMin) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    slots.push(`${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
+  }
+  return slots;
+};
 
 export default function SettingsTab() {
   const { user } = useAuth();
@@ -38,7 +46,8 @@ export default function SettingsTab() {
   const [calMonth, setCalMonth] = useState(startOfMonth(new Date()));
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editIsOff, setEditIsOff] = useState(false);
-  const [editSlots, setEditSlots] = useState<{ open: string; close: string }[]>([]);
+  const [editSlots, setEditSlots] = useState<string[]>([]);
+  const [slotInterval, setSlotInterval] = useState(30);
 
   useEffect(() => {
     if (!user) return;
@@ -117,7 +126,11 @@ export default function SettingsTab() {
     const ov = getOverride(date);
     setEditingDate(date);
     setEditIsOff(ov?.isOff ?? false);
-    setEditSlots(ov?.slots?.length ? [...ov.slots] : [{ open: '09:00', close: '18:00' }]);
+    // slots is string[] (new format); fall back to empty if legacy {open,close} data or no slots
+    setEditSlots(Array.isArray(ov?.slots) && ov.slots.length > 0 && typeof ov.slots[0] === 'string'
+      ? [...ov.slots]
+      : [],
+    );
   };
 
   const handleSaveOverride = async () => {
@@ -283,60 +296,44 @@ export default function SettingsTab() {
 
             {!editIsOff && (
               <>
-                {editSlots.map((slot, i) => (
-                  <View key={i} style={styles.slotCard}>
-                    <View style={[styles.slotCardHeader, isRTL && styles.slotCardHeaderRtl]}>
-                      <Text style={styles.slotCardTitle}>{t('settings.timeSlot')} {editSlots.length > 1 ? i + 1 : ''}</Text>
-                      {editSlots.length > 1 && (
-                        <TouchableOpacity onPress={() => setEditSlots((s) => s.filter((_, j) => j !== i))}>
-                          <Text style={styles.removeSlotBtn}>✕</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    <Text style={styles.slotSubLabel}>{t('settings.opensAt')}</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View style={styles.timeRow}>
-                        {TIME_SLOTS.map((ts) => (
-                          <TouchableOpacity
-                            key={ts}
-                            style={[styles.timePill, slot.open === ts && styles.timePillSelected]}
-                            onPress={() => setEditSlots((s) => {
-                              const n = [...s]; n[i] = { ...n[i], open: ts }; return n;
-                            })}
-                          >
-                            <Text style={[styles.timePillText, slot.open === ts && styles.timePillTextSelected]}>
-                              {ts}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </ScrollView>
-                    <Text style={styles.slotSubLabel}>{t('settings.closesAt')}</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View style={styles.timeRow}>
-                        {TIME_SLOTS.map((ts) => (
-                          <TouchableOpacity
-                            key={ts}
-                            style={[styles.timePill, slot.close === ts && styles.timePillSelected]}
-                            onPress={() => setEditSlots((s) => {
-                              const n = [...s]; n[i] = { ...n[i], close: ts }; return n;
-                            })}
-                          >
-                            <Text style={[styles.timePillText, slot.close === ts && styles.timePillTextSelected]}>
-                              {ts}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </ScrollView>
-                  </View>
-                ))}
-                <TouchableOpacity
-                  style={styles.addSlotBtn}
-                  onPress={() => setEditSlots((s) => [...s, { open: '09:00', close: '18:00' }])}
-                >
-                  <Text style={styles.addSlotText}>+ {t('settings.addSlot')}</Text>
-                </TouchableOpacity>
+                {/* Interval selector */}
+                <View style={[styles.intervalRow, isRTL && styles.intervalRowRtl]}>
+                  <Text style={[styles.slotSubLabel, { marginBottom: 0 }]}>{t('settings.slotIntervalLabel')}</Text>
+                  {INTERVAL_OPTIONS.map((iv) => (
+                    <TouchableOpacity
+                      key={iv}
+                      style={[styles.timePill, slotInterval === iv && styles.timePillSelected]}
+                      onPress={() => setSlotInterval(iv)}
+                    >
+                      <Text style={[styles.timePillText, slotInterval === iv && styles.timePillTextSelected]}>
+                        {iv}{t('settings.minAbbr')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.slotSubLabel}>{t('settings.selectTimeSlots')}</Text>
+                {/* Slot grid */}
+                <View style={styles.slotGrid}>
+                  {generateTimeSlots(slotInterval).map((ts) => {
+                    const isSelected = editSlots.includes(ts);
+                    return (
+                      <TouchableOpacity
+                        key={ts}
+                        style={[styles.timePill, isSelected && styles.timePillSelected]}
+                        onPress={() => setEditSlots((prev) =>
+                          isSelected ? prev.filter((s) => s !== ts) : [...prev, ts].sort(),
+                        )}
+                      >
+                        <Text style={[styles.timePillText, isSelected && styles.timePillTextSelected]}>
+                          {ts}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={styles.slotSubLabel}>
+                  {editSlots.length > 0 ? `${editSlots.length} ${t('settings.slotsSelected')}` : t('settings.noSlotsSelected')}
+                </Text>
               </>
             )}
 
@@ -483,16 +480,10 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: '#c026d3', borderColor: '#c026d3' },
   checkboxMark: { color: '#fff', fontSize: 10, fontWeight: '700' },
   toggleLabel: { fontSize: 13, color: '#374151' },
-  slotCard: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 10, marginBottom: 10,
-    borderWidth: 1, borderColor: '#e5e7eb',
-  },
-  slotCardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  slotCardHeaderRtl: { flexDirection: 'row-reverse' },
-  slotCardTitle: { fontSize: 12, fontWeight: '600', color: '#374151' },
-  removeSlotBtn: { color: '#ef4444', fontSize: 14 },
   slotSubLabel: { fontSize: 11, color: '#6b7280', marginBottom: 4, marginTop: 6 },
-  timeRow: { flexDirection: 'row', gap: 4, paddingVertical: 2 },
+  intervalRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8 },
+  intervalRowRtl: { flexDirection: 'row-reverse' },
+  slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 8 },
   timePill: {
     paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8,
     borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#fff',
@@ -500,8 +491,6 @@ const styles = StyleSheet.create({
   timePillSelected: { backgroundColor: '#c026d3', borderColor: '#c026d3' },
   timePillText: { fontSize: 11, color: '#374151' },
   timePillTextSelected: { color: '#fff', fontWeight: '600' },
-  addSlotBtn: { paddingVertical: 4 },
-  addSlotText: { color: '#a21caf', fontSize: 13, fontWeight: '500' },
   editActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
   editActionsRtl: { flexDirection: 'row-reverse' },
   saveDateBtn: {

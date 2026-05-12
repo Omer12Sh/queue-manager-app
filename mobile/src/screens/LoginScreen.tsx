@@ -20,14 +20,13 @@ export default function LoginScreen() {
   const [devCode, setDevCode] = useState<string | null>(null);
   const [verifiedToken, setVerifiedToken] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'CLIENT' | 'SERVICE_PROVIDER'>('CLIENT');
   const [loading, setLoading] = useState(false);
 
   // Email/password fallback
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const { login } = useAuth();
+  const { loginWithToken } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
   const { language, setLanguage, dir } = useLanguage();
@@ -64,8 +63,8 @@ export default function LoginScreen() {
         setVerifiedToken(res.data.verifiedToken);
         setScreen('register');
       } else {
-        // Logged in
-        await AsyncStorage.setItem('token', res.data.token);
+        // Logged in — update AuthContext so the tabs layout sees the user
+        await loginWithToken(res.data.token, res.data.user);
         router.replace('/(tabs)');
       }
     } catch {
@@ -79,8 +78,9 @@ export default function LoginScreen() {
     if (!name.trim()) { Alert.alert('', t('validation.nameRequired')); return; }
     setLoading(true);
     try {
-      const res = await authApi.registerPhone({ verifiedToken, name: name.trim(), role });
-      await AsyncStorage.setItem('token', res.data.token);
+      // Always register as CLIENT from the mobile app
+      const res = await authApi.registerPhone({ verifiedToken, name: name.trim(), role: 'CLIENT' });
+      await loginWithToken(res.data.token, res.data.user);
       router.replace('/(tabs)');
     } catch {
       Alert.alert('', t('auth.registrationFailed'));
@@ -93,7 +93,8 @@ export default function LoginScreen() {
     if (!email.trim() || !password) return;
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      const res = await authApi.login(email.trim(), password);
+      await loginWithToken(res.data.token, res.data.user);
       router.replace('/(tabs)');
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
@@ -230,21 +231,6 @@ export default function LoginScreen() {
               autoFocus
             />
 
-            <Text style={[styles.label, textAlignStyle]}>{t('auth.roleLabel')}</Text>
-            <View style={styles.roleRow}>
-              {(['CLIENT', 'SERVICE_PROVIDER'] as const).map((r) => (
-                <TouchableOpacity
-                  key={r}
-                  style={[styles.roleBtn, role === r && styles.roleBtnActive]}
-                  onPress={() => setRole(r)}
-                >
-                  <Text style={[styles.roleBtnText, role === r && styles.roleBtnTextActive]}>
-                    {r === 'CLIENT' ? t('auth.roleClient') : t('auth.roleProvider')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <TouchableOpacity
               style={[styles.btn, loading && styles.btnDisabled]}
               onPress={handleRegisterPhone}
@@ -253,6 +239,10 @@ export default function LoginScreen() {
               {loading
                 ? <ActivityIndicator color="#fff" />
                 : <Text style={styles.btnText}>{t('auth.createAccount')}</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => { setScreen('phone'); setName(''); }} style={styles.altLink}>
+              <Text style={styles.altLinkText}>{t('booking.back')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -377,14 +367,6 @@ const styles = StyleSheet.create({
   },
   devCodeLabel: { fontSize: 11, color: '#92400e', fontWeight: '500' },
   devCode: { fontSize: 28, fontWeight: '700', color: '#92400e', letterSpacing: 8, marginTop: 4 },
-  roleRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  roleBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: 10,
-    borderWidth: 2, borderColor: '#e5e7eb', alignItems: 'center', backgroundColor: '#f9fafb',
-  },
-  roleBtnActive: { borderColor: '#c026d3', backgroundColor: '#fdf4ff' },
-  roleBtnText: { fontSize: 12, color: '#6b7280', fontWeight: '500', textAlign: 'center' },
-  roleBtnTextActive: { color: '#a21caf', fontWeight: '700' },
   footerRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 16 },
   footerRowRtl: { flexDirection: 'row-reverse' },
   footerText: { fontSize: 13, color: '#6b7280' },

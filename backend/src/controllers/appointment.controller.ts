@@ -64,6 +64,15 @@ export const getAppointment = async (req: AuthRequest, res: Response): Promise<v
 
 const SAFETY_BUFFER_MS = 10 * 60 * 1000; // 10-minute buffer between appointments
 
+/** Type guard: new format stores specific slot times as strings; legacy stores {open,close} windows */
+function isSpecificSlotFormat(slots: unknown): slots is string[] {
+  return Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'string';
+}
+
+function isLegacyWindowFormat(slots: unknown): slots is { open: string; close: string }[] {
+  return Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && slots[0] !== null;
+}
+
 export const createAppointment = async (req: AuthRequest, res: Response): Promise<void> => {
   // Accept either a single serviceId or an array serviceIds[]
   const { providerId, serviceId, serviceIds, startTime, notes } = req.body;
@@ -260,23 +269,27 @@ export const getAvailableSlots = async (req: AuthRequest, res: Response): Promis
   }
 
   // Determine working windows for the day
+  // New format: override.slots is string[] of "HH:mm" times (specific bookable slots)
+  // Legacy format: [{open, close}] windows — kept for fallback from workingHours
+  let specificSlotTimes: string[] | null = null; // null = use window-based generation
   let windows: { open: string; close: string }[] = [];
+
   if (override && !override.isOff) {
-    // Use override slots
-    windows = (override.slots as { open: string; close: string }[]) || [];
-  } else {
+    const rawSlots = override.slots;
+    if (isSpecificSlotFormat(rawSlots)) {
+      // New format: specific bookable time strings
+      specificSlotTimes = rawSlots;
+    } else if (isLegacyWindowFormat(rawSlots)) {
+      // Legacy {open, close} format — treat as windows
+      windows = rawSlots;
+    }
+  } else if (!override) {
     // Fall back to weekly working hours
     const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const jsDay = new Date(dateStr + 'T12:00:00Z').getDay();
     const dayKey = dayNames[jsDay];
     const hours = (providerProfile.workingHours as Record<string, { open: string; close: string } | null>)[dayKey];
     if (hours) windows = [hours];
-  }
-
-  if (windows.length === 0) {
-    // Provider not working on this day
-    res.json([]);
-    return;
   }
 
   const dayStart = new Date(`${dateStr}T00:00:00Z`);
@@ -295,14 +308,11 @@ export const getAvailableSlots = async (req: AuthRequest, res: Response): Promis
   const bufferMs = SAFETY_BUFFER_MS;
   const slots: { startTime: string; endTime: string }[] = [];
 
-  for (const window of windows) {
-    const winStart = new Date(`${dateStr}T${window.open}:00Z`);
-    const winEnd = new Date(`${dateStr}T${window.close}:00Z`);
-
-    let cursor = winStart;
-    while (cursor.getTime() + slotDurationMs <= winEnd.getTime()) {
+  if (specificSlotTimes !== null) {
+    // New mode: provider pre-selected specific start times — just validate each against existing bookings
+    for (const timeStr of specificSlotTimes) {
+      const cursor = new Date(`${dateStr}T${timeStr}:00Z`);
       const slotEnd = new Date(cursor.getTime() + slotDurationMs);
-      // Check if this slot (plus buffer) conflicts with any booked appointment
       const isBooked = booked.some(
         (b: { startTime: Date; endTime: Date }) =>
           b.startTime < new Date(slotEnd.getTime() + bufferMs) && b.endTime > cursor,
@@ -310,7 +320,28 @@ export const getAvailableSlots = async (req: AuthRequest, res: Response): Promis
       if (!isBooked) {
         slots.push({ startTime: cursor.toISOString(), endTime: slotEnd.toISOString() });
       }
-      cursor = new Date(cursor.getTime() + 30 * 60 * 1000); // advance 30 min
+    }
+  } else {
+    // Legacy mode: generate 30-min increments within working-hours windows
+    if (windows.length === 0) {
+      res.json([]);
+      return;
+    }
+    for (const window of windows) {
+      const winStart = new Date(`${dateStr}T${window.open}:00Z`);
+      const winEnd = new Date(`${dateStr}T${window.close}:00Z`);
+      let cursor = winStart;
+      while (cursor.getTime() + slotDurationMs <= winEnd.getTime()) {
+        const slotEnd = new Date(cursor.getTime() + slotDurationMs);
+        const isBooked = booked.some(
+          (b: { startTime: Date; endTime: Date }) =>
+            b.startTime < new Date(slotEnd.getTime() + bufferMs) && b.endTime > cursor,
+        );
+        if (!isBooked) {
+          slots.push({ startTime: cursor.toISOString(), endTime: slotEnd.toISOString() });
+        }
+        cursor = new Date(cursor.getTime() + 30 * 60 * 1000); // advance 30 min
+      }
     }
   }
 

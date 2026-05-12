@@ -10,12 +10,18 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { SUPPORTED_LANGUAGES } from '../../i18n';
 import { format, addMonths, startOfMonth, getDaysInMonth, addDays } from 'date-fns';
 
-// 30-minute time slots from 06:00 to 22:00
-const TIME_SLOTS = Array.from({ length: 33 }, (_, i) => {
-  const h = Math.floor(i / 2) + 6;
-  const m = (i % 2) * 30;
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-});
+// Generate time slots from 06:00 to 22:00 at the given interval (minutes)
+const generateTimeSlots = (intervalMin: number) => {
+  const slots: string[] = [];
+  const start = 6 * 60; // 06:00
+  const end = 22 * 60;  // 22:00
+  for (let m = start; m < end; m += intervalMin) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    slots.push(`${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
+  }
+  return slots;
+};
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -28,8 +34,9 @@ export default function SettingsPage() {
   const [overrides, setOverrides] = useState<AvailabilityOverride[]>([]);
   const [calMonth, setCalMonth] = useState(startOfMonth(new Date()));
   const [editingDate, setEditingDate] = useState<string | null>(null);
-  const [editSlots, setEditSlots] = useState<{ open: string; close: string }[]>([]);
+  const [editSlots, setEditSlots] = useState<string[]>([]);
   const [editIsOff, setEditIsOff] = useState(false);
+  const [slotInterval, setSlotInterval] = useState(30); // minutes between slot options
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
 
@@ -97,7 +104,11 @@ export default function SettingsPage() {
     const ov = getOverride(date);
     setEditingDate(date);
     setEditIsOff(ov?.isOff ?? false);
-    setEditSlots(ov?.slots?.length ? [...ov.slots] : [{ open: '09:00', close: '18:00' }]);
+    // slots is string[] (new format). Runtime check guards against legacy {open,close} DB records.
+    setEditSlots(Array.isArray(ov?.slots) && ov.slots.length > 0 && typeof ov.slots[0] === 'string'
+      ? [...ov.slots]
+      : [],
+    );
   };
 
   const handleSaveOverride = async () => {
@@ -121,13 +132,6 @@ export default function SettingsPage() {
     setEditingDate(null);
   };
 
-  const setSlotTime = (i: number, field: 'open' | 'close', val: string) => {
-    setEditSlots((prev) => {
-      const next = [...prev];
-      next[i] = { ...next[i], [field]: val };
-      return next;
-    });
-  };
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -251,56 +255,47 @@ export default function SettingsPage() {
             </label>
 
             {!editIsOff && (
-              <div className="space-y-4">
-                {editSlots.map((slot, i) => (
-                  <div key={i} className="space-y-2 p-3 rounded-xl bg-white border border-gray-100">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-gray-600">{t('settings.timeSlot')} {editSlots.length > 1 ? i + 1 : ''}</span>
-                      {editSlots.length > 1 && (
-                        <button onClick={() => setEditSlots((s) => s.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600">
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-gray-500">{t('settings.opensAt')}</p>
-                    <div className="overflow-x-auto pb-1">
-                      <div className="flex gap-1 min-w-max">
-                        {TIME_SLOTS.map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setSlotTime(i, 'open', t)}
-                            className={`px-2 py-1 rounded-lg text-xs border font-medium transition-colors ${
-                              slot.open === t
-                                ? 'bg-brand-600 text-white border-brand-600'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:bg-brand-50'
-                            }`}
-                          >{t}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-xs font-medium text-gray-500">{t('settings.closesAt')}</p>
-                    <div className="overflow-x-auto pb-1">
-                      <div className="flex gap-1 min-w-max">
-                        {TIME_SLOTS.map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setSlotTime(i, 'close', t)}
-                            className={`px-2 py-1 rounded-lg text-xs border font-medium transition-colors ${
-                              slot.close === t
-                                ? 'bg-brand-600 text-white border-brand-600'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:bg-brand-50'
-                            }`}
-                          >{t}</button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => setEditSlots((s) => [...s, { open: '09:00', close: '18:00' }])} className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
-                  <Plus size={12} /> {t('settings.addSlot')}
-                </button>
+              <div className="space-y-3">
+                {/* Interval selector */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-gray-600">{t('settings.slotIntervalLabel')}</span>
+                  {[15, 20, 30, 45, 60].map((iv) => (
+                    <button
+                      key={iv}
+                      type="button"
+                      onClick={() => setSlotInterval(iv)}
+                      className={`px-2 py-1 rounded-lg text-xs border font-medium transition-colors ${
+                        slotInterval === iv
+                          ? 'bg-brand-600 text-white border-brand-600'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'
+                      }`}
+                    >{iv}{t('settings.minAbbr')}</button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400">{t('settings.selectTimeSlots')}</p>
+                {/* Slot grid */}
+                <div className="flex flex-wrap gap-1 max-h-60 overflow-y-auto">
+                  {generateTimeSlots(slotInterval).map((ts) => {
+                    const isSelected = editSlots.includes(ts);
+                    return (
+                      <button
+                        key={ts}
+                        type="button"
+                        onClick={() => setEditSlots((prev) =>
+                          isSelected ? prev.filter((s) => s !== ts) : [...prev, ts].sort(),
+                        )}
+                        className={`px-2 py-1 rounded-lg text-xs border font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-brand-600 text-white border-brand-600'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:bg-brand-50'
+                        }`}
+                      >{ts}</button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {editSlots.length > 0 ? `${editSlots.length} ${t('settings.slotsSelected')}` : t('settings.noSlotsSelected')}
+                </p>
               </div>
             )}
 
