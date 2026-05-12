@@ -10,26 +10,65 @@ async function main() {
   const adminPass = await bcrypt.hash('Admin123!', 12);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@queue.app' },
-    update: {},
-    create: { email: 'admin@queue.app', password: adminPass, name: 'System Admin', role: 'ADMIN' },
+    update: {
+      password: adminPass,
+      name: 'System Admin',
+      role: 'ADMIN',
+      isActive: true,
+    },
+    create: {
+      email: 'admin@queue.app',
+      password: adminPass,
+      name: 'System Admin',
+      role: 'ADMIN',
+      isActive: true,
+    },
   });
 
   // Service provider
   const providerPass = await bcrypt.hash('Provider123!', 12);
   const provider = await prisma.user.upsert({
     where: { email: 'provider@queue.app' },
-    update: {},
-    create: { email: 'provider@queue.app', password: providerPass, name: 'Maya Cohen', role: 'SERVICE_PROVIDER', phone: '+972501234567' },
+    update: {
+      password: providerPass,
+      name: 'Maya Cohen',
+      role: 'SERVICE_PROVIDER',
+      phone: '+972501234567',
+      isActive: true,
+    },
+    create: {
+      email: 'provider@queue.app',
+      password: providerPass,
+      name: 'Maya Cohen',
+      role: 'SERVICE_PROVIDER',
+      phone: '+972501234567',
+      isActive: true,
+    },
   });
 
   const profile = await prisma.providerProfile.upsert({
     where: { userId: provider.id },
-    update: {},
+    update: {
+      businessName: 'Maya Brows Studio',
+      description: 'Professional eyebrow design, threading & tinting. Book your appointment today!',
+      address: 'Tel Aviv, Israel',
+      defaultLanguage: 'he',
+      workingHours: {
+        sun: { open: '10:00', close: '18:00' },
+        mon: { open: '09:00', close: '19:00' },
+        tue: { open: '09:00', close: '19:00' },
+        wed: { open: '09:00', close: '19:00' },
+        thu: { open: '09:00', close: '19:00' },
+        fri: { open: '09:00', close: '14:00' },
+        sat: null,
+      },
+    },
     create: {
       userId: provider.id,
       businessName: 'Maya Brows Studio',
       description: 'Professional eyebrow design, threading & tinting. Book your appointment today!',
       address: 'Tel Aviv, Israel',
+      defaultLanguage: 'he',
       workingHours: {
         sun: { open: '10:00', close: '18:00' },
         mon: { open: '09:00', close: '19:00' },
@@ -57,8 +96,21 @@ async function main() {
   const clientPass = await bcrypt.hash('Client123!', 12);
   const client = await prisma.user.upsert({
     where: { email: 'client@queue.app' },
-    update: {},
-    create: { email: 'client@queue.app', password: clientPass, name: 'Sarah Levi', role: 'CLIENT', phone: '+972507654321' },
+    update: {
+      password: clientPass,
+      name: 'Sarah Levi',
+      role: 'CLIENT',
+      phone: '+972507654321',
+      isActive: true,
+    },
+    create: {
+      email: 'client@queue.app',
+      password: clientPass,
+      name: 'Sarah Levi',
+      role: 'CLIENT',
+      phone: '+972507654321',
+      isActive: true,
+    },
   });
 
   // Sample announcement

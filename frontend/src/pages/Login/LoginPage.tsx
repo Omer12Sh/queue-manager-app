@@ -34,7 +34,8 @@ export default function LoginPage() {
     return null;
   }
 
-  const showDemo = import.meta.env.VITE_SHOW_DEMO === 'true';
+  const showDemo = import.meta.env.DEV
+    && ['true', '1', 'yes', 'on'].includes(String(import.meta.env.VITE_SHOW_DEMO).trim().toLowerCase());
 
   const demoAccounts = [
     { role: t('roles.ADMIN'), email: 'admin@queue.app', password: 'Admin123!' },
@@ -134,4 +135,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

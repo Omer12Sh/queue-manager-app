@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { appointmentApi } from '../../src/services/api';
 import type { Appointment, AppointmentStatus } from '../../src/types';
 
@@ -12,6 +13,9 @@ export default function AppointmentsTab() {
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const { dir } = useLanguage();
+  const isRTL = dir === 'rtl';
+  const textAlignStyle = { textAlign: isRTL ? 'right' : 'left' as const, writingDirection: dir };
 
   const filters = [
     { value: '', label: t('appointments.filterAll') },
@@ -60,10 +64,10 @@ export default function AppointmentsTab() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { direction: dir }]}>
       {/* Filter row */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}
-        contentContainerStyle={styles.filterContent}>
+        contentContainerStyle={[styles.filterContent, isRTL && styles.filterContentRtl]}>
         {filters.map((f) => (
           <TouchableOpacity
             key={f.value}
@@ -87,21 +91,21 @@ export default function AppointmentsTab() {
               <Text style={styles.emptyDesc}>{t('appointments.noFoundDesc')}</Text>
             </View>
           ) : appointments.map((appt) => (
-            <View key={appt.id} style={styles.card}>
+            <View key={appt.id} style={[styles.card, isRTL && styles.cardRtl]}>
               <View style={styles.dateBadge}>
                 <Text style={styles.dateMon}>{format(parseISO(appt.startTime), 'MMM').toUpperCase()}</Text>
                 <Text style={styles.dateDay}>{format(parseISO(appt.startTime), 'd')}</Text>
               </View>
               <View style={styles.info}>
-                <Text style={styles.serviceName}>{appt.service?.name}</Text>
-                <Text style={styles.meta}>
+                <Text style={[styles.serviceName, textAlignStyle]}>{appt.service?.name}</Text>
+                <Text style={[styles.meta, textAlignStyle]}>
                   {format(parseISO(appt.startTime), 'EEE, h:mm a')} · {appt.service?.durationMin}min
                 </Text>
-                <Text style={styles.meta}>
+                <Text style={[styles.meta, textAlignStyle]}>
                   {appt.provider?.providerProfile?.businessName || appt.provider?.name}
                 </Text>
               </View>
-              <View style={styles.right}>
+              <View style={[styles.right, isRTL && styles.rightRtl]}>
                 <View style={[styles.statusBadge, { backgroundColor: statusColor(appt.status) + '22' }]}>
                   <Text style={[styles.statusText, { color: statusColor(appt.status) }]}>
                     {t(`status.${appt.status}`)}
@@ -125,6 +129,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   filterScroll: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexGrow: 0 },
   filterContent: { flexDirection: 'row', gap: 8, padding: 12, paddingHorizontal: 16 },
+  filterContentRtl: { flexDirection: 'row-reverse' },
   filterBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -151,6 +156,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  cardRtl: { flexDirection: 'row-reverse' },
   dateBadge: {
     width: 50,
     height: 50,
@@ -165,6 +171,7 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 13, fontWeight: '600', color: '#111827' },
   meta: { fontSize: 11, color: '#6b7280', marginTop: 2 },
   right: { alignItems: 'flex-end', gap: 6 },
+  rightRtl: { alignItems: 'flex-start' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   statusText: { fontSize: 11, fontWeight: '600' },
   cancelBtn: { paddingVertical: 3 },

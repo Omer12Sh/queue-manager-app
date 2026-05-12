@@ -38,6 +38,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       data: {
         userId: user.id,
         businessName: name,
+        defaultLanguage: 'he',
         workingHours: {
           mon: { open: '09:00', close: '18:00' },
           tue: { open: '09:00', close: '18:00' },

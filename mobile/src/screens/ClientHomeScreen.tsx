@@ -5,6 +5,7 @@ import {
 import { format, parseISO, isAfter } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { appointmentApi } from '../services/api';
 import type { Appointment } from '../types';
 
@@ -13,6 +14,9 @@ export default function ClientHomeScreen() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const { dir } = useLanguage();
+  const isRTL = dir === 'rtl';
+  const textAlignStyle = { textAlign: isRTL ? 'right' : 'left' as const, writingDirection: dir };
 
   useEffect(() => {
     appointmentApi.getAll().then((res) => {
@@ -54,16 +58,16 @@ export default function ClientHomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { direction: dir }]} contentContainerStyle={styles.content}>
       {/* Banner */}
       <View style={styles.banner}>
-        <Text style={styles.greeting}>{greeting()},</Text>
-        <Text style={styles.userName}>{user?.name} 👋</Text>
-        <Text style={styles.bannerSub}>{t('client.welcomeSubtitle')}</Text>
+        <Text style={[styles.greeting, textAlignStyle]}>{greeting()},</Text>
+        <Text style={[styles.userName, textAlignStyle]}>{user?.name} 👋</Text>
+        <Text style={[styles.bannerSub, textAlignStyle]}>{t('client.welcomeSubtitle')}</Text>
       </View>
 
       {/* Stats */}
-      <View style={styles.statsRow}>
+      <View style={[styles.statsRow, isRTL && styles.statsRowRtl]}>
         <View style={styles.statCard}>
           <Text style={[styles.statNum, { color: '#c026d3' }]}>{upcoming.length}</Text>
           <Text style={styles.statLabel}>{t('client.upcoming')}</Text>
@@ -80,21 +84,21 @@ export default function ClientHomeScreen() {
 
       {/* Upcoming appointments */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('client.upcomingAppointments')}</Text>
+        <Text style={[styles.sectionTitle, textAlignStyle]}>{t('client.upcomingAppointments')}</Text>
         {upcoming.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>{t('client.noUpcoming')}</Text>
           </View>
         ) : (
           upcoming.slice(0, 5).map((appt) => (
-            <View key={appt.id} style={styles.apptRow}>
+            <View key={appt.id} style={[styles.apptRow, isRTL && styles.apptRowRtl]}>
               <View style={styles.dateBadge}>
                 <Text style={styles.dateMon}>{format(parseISO(appt.startTime), 'MMM').toUpperCase()}</Text>
                 <Text style={styles.dateDay}>{format(parseISO(appt.startTime), 'd')}</Text>
               </View>
               <View style={styles.apptInfo}>
-                <Text style={styles.apptService}>{appt.service?.name}</Text>
-                <Text style={styles.apptMeta}>
+                <Text style={[styles.apptService, textAlignStyle]}>{appt.service?.name}</Text>
+                <Text style={[styles.apptMeta, textAlignStyle]}>
                   {format(parseISO(appt.startTime), 'EEE, h:mm a')} · {appt.provider?.providerProfile?.businessName || appt.provider?.name}
                 </Text>
               </View>
@@ -121,6 +125,7 @@ const styles = StyleSheet.create({
   userName: { color: '#fff', fontSize: 26, fontWeight: '700', marginTop: 2 },
   bannerSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 6 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  statsRowRtl: { flexDirection: 'row-reverse' },
   statCard: {
     flex: 1,
     backgroundColor: '#fff',
@@ -154,6 +159,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
+  apptRowRtl: { flexDirection: 'row-reverse' },
   dateBadge: {
     width: 44,
     height: 44,
