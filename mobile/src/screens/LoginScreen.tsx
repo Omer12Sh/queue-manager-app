@@ -398,6 +398,3 @@ const styles = StyleSheet.create({
   },
   demoBtnText: { fontSize: 11, color: '#6b7280' },
 });
-
-
-type ValidationErrors = Partial<Record<'email' | 'password', string>>;

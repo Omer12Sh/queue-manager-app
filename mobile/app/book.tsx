@@ -241,7 +241,7 @@ export default function BookScreen() {
         {selectedServices.length > 0 && (
           <View style={[styles.selectionBar, isRTL && styles.selectionBarRtl]}>
             <Text style={[styles.selectionText, { flex: 1 }]}>
-              {selectedServices.length} {t('booking.servicesSelected')} · {totalDuration}{t('booking.minutes')[0]} · ₪{totalPrice}
+              {selectedServices.length} {t('booking.servicesSelected')} · {totalDuration}min · ₪{totalPrice}
             </Text>
             <TouchableOpacity onPress={() => setStep('date')} style={styles.nextBtn}>
               <Text style={styles.nextBtnText}>{t('booking.next')} →</Text>
@@ -339,7 +339,7 @@ export default function BookScreen() {
         <View style={styles.summaryCard}>
           {[
             { label: t('booking.providerLabel'), value: provider?.providerProfile?.businessName || provider?.name || '' },
-            { label: t('booking.dateLabel'), value: selectedDate ? format(new Date(Number(selectedDate.split('-')[0]), Number(selectedDate.split('-')[1]) - 1, Number(selectedDate.split('-')[2])), 'EEEE, d MMM yyyy') : '' },
+            { label: t('booking.dateLabel'), value: selectedDate ? format(parseISO(selectedDate), 'EEEE, d MMM yyyy') : '' },
             { label: t('booking.timeLabel'), value: selectedSlot ? format(parseISO(selectedSlot.startTime), 'HH:mm') : '' },
             { label: t('booking.durationLabel'), value: `${totalDuration} ${t('booking.minutes')}` },
             { label: t('booking.priceLabel'), value: `₪${totalPrice}` },

@@ -244,6 +244,7 @@
     "postAnnouncement": "Post Announcement",
     "annCreated": "Announcement created",
     "annDeleted": "Announcement deleted",
+    "annDeleteConfirm": "Delete this announcement?",
     "annFailed": "Failed to create announcement",
     "days": {
       "sun": "Sunday",

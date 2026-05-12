@@ -244,6 +244,7 @@
     "postAnnouncement": "פרסם הודעה",
     "annCreated": "ההודעה פורסמה",
     "annDeleted": "ההודעה נמחקה",
+    "annDeleteConfirm": "למחוק הודעה זו?",
     "annFailed": "פרסום ההודעה נכשל",
     "days": {
       "sun": "ראשון",

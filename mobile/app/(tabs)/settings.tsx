@@ -94,7 +94,7 @@ export default function SettingsTab() {
   };
 
   const handleDeleteAnn = (id: string) => {
-    Alert.alert('', t('settings.annDeleted'), [
+    Alert.alert('', t('settings.annDeleteConfirm', { defaultValue: 'Delete this announcement?' }), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.delete'),

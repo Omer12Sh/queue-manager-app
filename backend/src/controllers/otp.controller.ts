@@ -49,15 +49,19 @@ export const requestOtp = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  const existing = otpStore.get(phone);
-  // Prevent flooding: if a code was issued less than 60s ago, reject
+  // Normalize phone to digits-only for consistent key storage
+  const normalizedPhone = phone.replace(/[\s\-()]/g, '');
+
+  const existing = otpStore.get(normalizedPhone);
+  // Prevent flooding: reject if a code was issued less than 60 seconds ago
+  // (i.e., it has more than 4 minutes left on its 5-minute TTL)
   if (existing && existing.expiresAt > Date.now() + 4 * 60 * 1000) {
     res.status(429).json({ message: 'Please wait before requesting a new code' });
     return;
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  otpStore.set(phone, { otp, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 });
+  otpStore.set(normalizedPhone, { otp, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 });
 
   const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER } = process.env;
 
@@ -69,7 +73,7 @@ export const requestOtp = async (req: Request, res: Response): Promise<void> => 
       await twilio.messages.create({
         body: `Your QueueManager verification code is: ${otp}`,
         from: TWILIO_FROM_NUMBER,
-        to: phone,
+        to: normalizedPhone,
       });
       res.json({ message: 'OTP sent via SMS' });
     } catch (err) {
@@ -89,7 +93,10 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const entry = otpStore.get(phone);
+  // Normalize phone to match stored key
+  const normalizedPhone = phone.replace(/[\s\-()]/g, '');
+
+  const entry = otpStore.get(normalizedPhone);
   if (!entry || entry.expiresAt < Date.now()) {
     res.status(401).json({ message: 'OTP expired. Please request a new code.' });
     return;
@@ -97,7 +104,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 
   entry.attempts++;
   if (entry.attempts > 5) {
-    otpStore.delete(phone);
+    otpStore.delete(normalizedPhone);
     res.status(401).json({ message: 'Too many failed attempts. Please request a new code.' });
     return;
   }
@@ -107,10 +114,10 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  otpStore.delete(phone);
+  otpStore.delete(normalizedPhone);
 
   const user = await prisma.user.findFirst({
-    where: { phone },
+    where: { phone: normalizedPhone },
     select: {
       id: true, email: true, name: true, role: true,
       phone: true, isActive: true, createdAt: true, providerProfile: true,
@@ -127,7 +134,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
   } else {
     // Phone is verified but no account exists yet → registration needed
     const verifiedToken = jwt.sign(
-      { phone, verified: true },
+      { phone: normalizedPhone, verified: true },
       JWT_SECRET,
       { expiresIn: '10m' } as jwt.SignOptions,
     );
@@ -162,8 +169,8 @@ export const registerPhone = async (req: Request, res: Response): Promise<void> 
   }
 
   const trimmedName = (name ?? '').trim();
-  if (!trimmedName || !/^[\p{L}\s'-]+$/u.test(trimmedName)) {
-    res.status(400).json({ message: 'Valid name required' });
+  if (!trimmedName || trimmedName.length < 2 || trimmedName.length > 100 || !/^[\p{L}\s'-]+$/u.test(trimmedName)) {
+    res.status(400).json({ message: 'Valid name required (2-100 characters, letters only)' });
     return;
   }
   if (!['SERVICE_PROVIDER', 'CLIENT'].includes(role ?? '')) {
