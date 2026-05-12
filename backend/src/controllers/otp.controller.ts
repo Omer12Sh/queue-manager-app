@@ -68,7 +68,7 @@ export const requestOtp = async (req: Request, res: Response): Promise<void> => 
   if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER) {
     try {
       // Dynamic require so the package is only needed when Twilio is configured
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const twilio = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
       await twilio.messages.create({
         body: `Your QueueManager verification code is: ${otp}`,
