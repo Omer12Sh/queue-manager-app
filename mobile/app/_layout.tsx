@@ -5,10 +5,12 @@ import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { LanguageProvider, useLanguage } from '../src/contexts/LanguageContext';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 
 function AppContent() {
   const { isLoading } = useAuth();
   const { dir } = useLanguage();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -23,6 +25,16 @@ function AppContent() {
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="book"
+          options={{
+            headerShown: true,
+            headerTitle: t('booking.title'),
+            headerTintColor: '#c026d3',
+            headerStyle: { backgroundColor: '#fff' },
+            headerTitleStyle: { fontWeight: '600' },
+          }}
+        />
       </Stack>
       <Toast />
     </View>

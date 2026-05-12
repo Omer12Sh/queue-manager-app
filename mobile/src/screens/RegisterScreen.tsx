@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, type TextStyle,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView, type TextStyle,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -9,28 +9,53 @@ import { authApi } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SUPPORTED_LANGUAGES } from '../i18n';
 
-type RegisterRole = 'CLIENT' | 'SERVICE_PROVIDER';
+type ValidationErrors = Partial<Record<'name' | 'email' | 'password' | 'phone', string>>;
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { language, setLanguage, dir } = useLanguage();
   const isRTL = dir === 'rtl';
-  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left', writingDirection: dir };
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    role: 'CLIENT' as RegisterRole,
-  });
+  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left' };
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
+  const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
 
+  const validate = (): boolean => {
+    const errs: ValidationErrors = {};
+    // Name: letters (including Unicode/Hebrew) and spaces only
+    if (!form.name.trim()) {
+      errs.name = t('validation.nameRequired');
+    } else if (!/^[\p{L}\s'-]+$/u.test(form.name.trim())) {
+      errs.name = t('validation.nameInvalid');
+    }
+    // Email
+    if (!form.email.trim()) {
+      errs.email = t('validation.emailRequired');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errs.email = t('validation.emailInvalid');
+    }
+    // Password
+    if (!form.password) {
+      errs.password = t('validation.passwordRequired');
+    } else if (form.password.length < 8) {
+      errs.password = t('validation.passwordTooShort');
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(form.password)) {
+      errs.password = t('validation.passwordWeak');
+    }
+    // Phone (optional but validated if provided)
+    if (form.phone && !/^\+?[\d\s\-()]{7,20}$/.test(form.phone)) {
+      errs.phone = t('validation.phoneInvalid');
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleRegister = async () => {
-    if (!form.name || !form.email || !form.password) return;
+    if (!validate()) return;
     setLoading(true);
     try {
-      await authApi.register(form);
+      await authApi.register({ ...form, role: 'CLIENT' });
       Alert.alert(t('auth.register'), t('auth.accountCreated'));
       router.replace('/login');
     } catch {
@@ -42,116 +67,113 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { direction: dir }]}
+      style={[styles.wrapper, { direction: dir }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.langRow, isRTL && styles.langRowRtl]}>
-        {SUPPORTED_LANGUAGES.map((lang) => (
-          <TouchableOpacity
-            key={lang.code}
-            onPress={() => setLanguage(lang.code)}
-            style={[styles.langBtn, language === lang.code && styles.langBtnActive]}
-          >
-            <Text style={styles.langFlag}>{lang.flag}</Text>
-            <Text style={[styles.langLabel, language === lang.code && styles.langLabelActive]}>
-              {lang.code.toUpperCase()}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.logoArea}>
-        <Text style={styles.logoEmoji}>✨</Text>
-        <Text style={styles.appName}>{t('app.name')}</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={[styles.cardTitle, textAlignStyle]}>{t('auth.registerTitle')}</Text>
-
-        <Text style={[styles.label, textAlignStyle]}>{t('auth.fullNameLabel')}</Text>
-        <TextInput
-          style={[styles.input, textAlignStyle]}
-          value={form.name}
-          onChangeText={(name) => setForm((prev) => ({ ...prev, name }))}
-          placeholder={t('auth.fullNamePlaceholder')}
-        />
-
-        <Text style={[styles.label, textAlignStyle]}>{t('auth.emailLabel')}</Text>
-        <TextInput
-          style={[styles.input, textAlignStyle]}
-          value={form.email}
-          onChangeText={(email) => setForm((prev) => ({ ...prev, email }))}
-          placeholder={t('auth.emailPlaceholder')}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        <Text style={[styles.label, textAlignStyle]}>{t('auth.passwordLabel')}</Text>
-        <TextInput
-          style={[styles.input, textAlignStyle]}
-          value={form.password}
-          onChangeText={(password) => setForm((prev) => ({ ...prev, password }))}
-          placeholder={t('auth.passwordMinLength')}
-          secureTextEntry
-        />
-
-        <Text style={[styles.label, textAlignStyle]}>{t('auth.phoneLabel')}</Text>
-        <TextInput
-          style={[styles.input, textAlignStyle]}
-          value={form.phone}
-          onChangeText={(phone) => setForm((prev) => ({ ...prev, phone }))}
-          placeholder={t('auth.phonePlaceholder')}
-          keyboardType="phone-pad"
-        />
-
-        <Text style={[styles.label, textAlignStyle]}>{t('auth.roleLabel')}</Text>
-        <View style={[styles.roleRow, isRTL && styles.roleRowRtl]}>
-          <TouchableOpacity
-            style={[styles.roleBtn, form.role === 'CLIENT' && styles.roleBtnActive]}
-            onPress={() => setForm((prev) => ({ ...prev, role: 'CLIENT' }))}
-          >
-            <Text style={[styles.roleText, form.role === 'CLIENT' && styles.roleTextActive]}>
-              {t('auth.roleClient')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.roleBtn, form.role === 'SERVICE_PROVIDER' && styles.roleBtnActive]}
-            onPress={() => setForm((prev) => ({ ...prev, role: 'SERVICE_PROVIDER' }))}
-          >
-            <Text style={[styles.roleText, form.role === 'SERVICE_PROVIDER' && styles.roleTextActive]}>
-              {t('auth.roleProvider')}
-            </Text>
-          </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Language switcher */}
+        <View style={[styles.langRow, isRTL && styles.langRowRtl]}>
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <TouchableOpacity
+              key={lang.code}
+              onPress={() => setLanguage(lang.code)}
+              style={[styles.langBtn, language === lang.code && styles.langBtnActive]}
+            >
+              <Text style={styles.langFlag}>{lang.flag}</Text>
+              <Text style={[styles.langLabel, language === lang.code && styles.langLabelActive]}>
+                {lang.code.toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <TouchableOpacity
-          style={[styles.btn, loading && styles.btnDisabled]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.btnText}>{t('auth.createAccount')}</Text>}
-        </TouchableOpacity>
-
-        <View style={[styles.footerRow, isRTL && styles.footerRowRtl]}>
-          <Text style={styles.footerText}>{t('auth.haveAccount')}</Text>
-          <TouchableOpacity onPress={() => router.replace('/login')}>
-            <Text style={styles.footerLink}>{t('auth.signIn')}</Text>
-          </TouchableOpacity>
+        <View style={styles.logoArea}>
+          <Text style={styles.logoEmoji}>✨</Text>
+          <Text style={styles.appName}>{t('app.name')}</Text>
         </View>
-      </View>
+
+        <View style={styles.card}>
+          <Text style={[styles.cardTitle, textAlignStyle]}>{t('auth.registerTitle')}</Text>
+
+          {/* Name */}
+          <Text style={[styles.label, textAlignStyle]}>{t('auth.fullNameLabel')}</Text>
+          <TextInput
+            style={[styles.input, textAlignStyle, errors.name && styles.inputError]}
+            value={form.name}
+            onChangeText={(name) => { setForm((prev) => ({ ...prev, name })); setErrors((e) => ({ ...e, name: undefined })); }}
+            placeholder={t('auth.fullNamePlaceholder')}
+            autoCorrect={false}
+          />
+          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+
+          {/* Email */}
+          <Text style={[styles.label, textAlignStyle]}>{t('auth.emailLabel')}</Text>
+          <TextInput
+            style={[styles.input, textAlignStyle, errors.email && styles.inputError]}
+            value={form.email}
+            onChangeText={(email) => { setForm((prev) => ({ ...prev, email })); setErrors((e) => ({ ...e, email: undefined })); }}
+            placeholder={t('auth.emailPlaceholder')}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+
+          {/* Password */}
+          <Text style={[styles.label, textAlignStyle]}>{t('auth.passwordLabel')}</Text>
+          <TextInput
+            style={[styles.input, textAlignStyle, errors.password && styles.inputError]}
+            value={form.password}
+            onChangeText={(password) => { setForm((prev) => ({ ...prev, password })); setErrors((e) => ({ ...e, password: undefined })); }}
+            placeholder={t('auth.passwordMinLength')}
+            secureTextEntry
+          />
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+          {/* Phone */}
+          <Text style={[styles.label, textAlignStyle]}>{t('auth.phoneLabel')}</Text>
+          <TextInput
+            style={[styles.input, textAlignStyle, errors.phone && styles.inputError]}
+            value={form.phone}
+            onChangeText={(phone) => { setForm((prev) => ({ ...prev, phone })); setErrors((e) => ({ ...e, phone: undefined })); }}
+            placeholder={t('auth.phonePlaceholder')}
+            keyboardType="phone-pad"
+          />
+          {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+
+          <TouchableOpacity
+            style={[styles.btn, loading && styles.btnDisabled]}
+            onPress={handleRegister}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.btnText}>{t('auth.createAccount')}</Text>}
+          </TouchableOpacity>
+
+          <View style={[styles.footerRow, isRTL && styles.footerRowRtl]}>
+            <Text style={styles.footerText}>{t('auth.haveAccount')}</Text>
+            <TouchableOpacity onPress={() => router.replace('/login')}>
+              <Text style={styles.footerLink}>{t('auth.signIn')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: { flex: 1, backgroundColor: '#c026d3' },
   container: {
-    flex: 1,
-    backgroundColor: '#c026d3',
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
+    paddingTop: 48,
   },
   langRow: {
     flexDirection: 'row',
@@ -213,43 +235,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     color: '#111827',
-    marginBottom: 14,
+    marginBottom: 4,
   },
-  roleRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
-  },
-  roleRowRtl: {
-    flexDirection: 'row-reverse',
-  },
-  roleBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  roleBtnActive: {
-    borderColor: '#c026d3',
-    backgroundColor: '#fdf4ff',
-  },
-  roleText: {
-    fontSize: 12,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  roleTextActive: {
-    color: '#a21caf',
-    fontWeight: '600',
-  },
+  inputError: { borderColor: '#ef4444' },
+  errorText: { fontSize: 11, color: '#ef4444', marginBottom: 10 },
   btn: {
     backgroundColor: '#c026d3',
     borderRadius: 10,
     paddingVertical: 13,
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 12,
   },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: '#fff', fontWeight: '600', fontSize: 15 },

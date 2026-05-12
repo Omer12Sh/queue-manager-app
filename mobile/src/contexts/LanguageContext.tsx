@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { Alert, I18nManager } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n, { SUPPORTED_LANGUAGES } from '../i18n';
 
@@ -20,6 +21,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       const lang = stored || DEFAULT_LANGUAGE;
       setLanguageState(lang);
       i18n.changeLanguage(lang);
+      // Sync RTL state with stored language silently on startup
+      const isRtl = SUPPORTED_LANGUAGES.find((l) => l.code === lang)?.dir === 'rtl';
+      if (I18nManager.isRTL !== isRtl) {
+        I18nManager.forceRTL(isRtl);
+      }
     });
   }, []);
 
@@ -28,6 +34,16 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const setLanguage = async (lang: string) => {
     await AsyncStorage.setItem('qm_language', lang);
     i18n.changeLanguage(lang);
+    const newIsRtl = SUPPORTED_LANGUAGES.find((l) => l.code === lang)?.dir === 'rtl';
+    if (I18nManager.isRTL !== newIsRtl) {
+      I18nManager.forceRTL(newIsRtl);
+      Alert.alert(
+        lang === 'he' ? 'שנה כיוון' : 'Direction Change',
+        lang === 'he'
+          ? 'נא להפעיל מחדש את האפליקציה כדי להחיל את כיוון הטקסט.'
+          : 'Please restart the app to apply the new text direction.',
+      );
+    }
     setLanguageState(lang);
   };
 

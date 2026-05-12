@@ -267,5 +267,16 @@
   "lang": {
     "en": "English",
     "he": "עברית"
+  },
+  "validation": {
+    "emailRequired": "נדרשת כתובת אימייל",
+    "emailInvalid": "הכנס כתובת אימייל תקינה",
+    "passwordRequired": "נדרשת סיסמה",
+    "passwordTooShort": "הסיסמה חייבת להכיל לפחות 8 תווים",
+    "passwordWeak": "הסיסמה חייבת להכיל אות גדולה, קטנה וספרה",
+    "nameRequired": "נדרש שם מלא",
+    "nameInvalid": "השם יכול להכיל רק אותיות ורווחים",
+    "phoneInvalid": "הטלפון יכול להכיל רק ספרות, רווחים, + ו-",
+    "loginFailed": "הכניסה נכשלה. אנא בדוק את החיבור."
   }
 }
