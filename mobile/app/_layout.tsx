@@ -33,6 +33,7 @@ function AppContent() {
             headerTintColor: '#c026d3',
             headerStyle: { backgroundColor: '#fff' },
             headerTitleStyle: { fontWeight: '600' },
+            headerBackVisible: false,
           }}
         />
       </Stack>
