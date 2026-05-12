@@ -2,11 +2,13 @@ import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { ActivityIndicator, View } from 'react-native';
 
 export default function TabsLayout() {
   const { user, isLoading } = useAuth();
   const { t } = useTranslation();
+  const { dir } = useLanguage();
 
   if (isLoading) {
     return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -21,6 +23,8 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#c026d3',
         tabBarInactiveTintColor: '#9ca3af',
+        tabBarStyle: { direction: dir },
+        sceneStyle: { direction: dir },
         headerStyle: { backgroundColor: '#fff' },
         headerTintColor: '#c026d3',
         headerTitleStyle: { fontWeight: '600' },

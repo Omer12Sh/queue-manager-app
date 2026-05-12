@@ -75,7 +75,8 @@
     "cancel": "Cancel",
     "cancelConfirm": "Cancel this appointment?",
     "cancelSuccess": "Appointment cancelled",
-    "cancelFailed": "Failed to cancel"
+    "cancelFailed": "Failed to cancel",
+    "loadFailed": "Failed to load appointments"
   },
   "booking": {
     "title": "Book an Appointment",

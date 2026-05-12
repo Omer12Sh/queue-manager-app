@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, ActivityIndicator,
+  View, Text, ScrollView, StyleSheet, ActivityIndicator, type TextStyle,
 } from 'react-native';
 import { format, parseISO, isToday } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { appointmentApi, serviceApi } from '../services/api';
 import type { Appointment, Service } from '../types';
 
@@ -14,6 +15,9 @@ export default function ProviderHomeScreen() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const { dir } = useLanguage();
+  const isRTL = dir === 'rtl';
+  const textAlignStyle: TextStyle = { textAlign: isRTL ? 'right' : 'left', writingDirection: dir };
 
   useEffect(() => {
     Promise.allSettled([
@@ -45,12 +49,12 @@ export default function ProviderHomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{t('provider.welcomeBack', { name: user?.name })}</Text>
-      <Text style={styles.subtitle}>{t('provider.overviewSubtitle')}</Text>
+    <ScrollView style={[styles.container, { direction: dir }]} contentContainerStyle={styles.content}>
+      <Text style={[styles.title, textAlignStyle]}>{t('provider.welcomeBack', { name: user?.name })}</Text>
+      <Text style={[styles.subtitle, textAlignStyle]}>{t('provider.overviewSubtitle')}</Text>
 
       {/* Stats */}
-      <View style={styles.grid}>
+      <View style={[styles.grid, isRTL && styles.gridRtl]}>
         {[
           { label: t('provider.todayAppointments'), value: todayAppts.length, color: '#c026d3' },
           { label: t('provider.pendingConfirmations'), value: pending.length, color: '#f59e0b' },
@@ -66,21 +70,21 @@ export default function ProviderHomeScreen() {
 
       {/* Today's schedule */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('provider.todaySchedule')}</Text>
+        <Text style={[styles.sectionTitle, textAlignStyle]}>{t('provider.todaySchedule')}</Text>
         {todayAppts.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>{t('provider.noTodayAppointments')}</Text>
           </View>
         ) : (
           todayAppts.map((appt) => (
-            <View key={appt.id} style={styles.apptRow}>
+            <View key={appt.id} style={[styles.apptRow, isRTL && styles.apptRowRtl]}>
               <View style={styles.timeBox}>
                 <Text style={styles.timeText}>{format(parseISO(appt.startTime), 'h:mm')}</Text>
                 <Text style={styles.ampm}>{format(parseISO(appt.startTime), 'a')}</Text>
               </View>
               <View style={styles.apptInfo}>
-                <Text style={styles.clientName}>{appt.client?.name}</Text>
-                <Text style={styles.serviceName}>{appt.service?.name} · {appt.service?.durationMin}min</Text>
+                <Text style={[styles.clientName, textAlignStyle]}>{appt.client?.name}</Text>
+                <Text style={[styles.serviceName, textAlignStyle]}>{appt.service?.name} · {appt.service?.durationMin}min</Text>
               </View>
               <View style={[styles.statusDot, { backgroundColor: statusColor(appt.status) }]} />
             </View>
@@ -98,6 +102,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', color: '#111827' },
   subtitle: { fontSize: 13, color: '#6b7280', marginTop: 2, marginBottom: 16 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  gridRtl: { flexDirection: 'row-reverse' },
   statCard: {
     width: '47%',
     backgroundColor: '#fff',
@@ -131,6 +136,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
+  apptRowRtl: { flexDirection: 'row-reverse' },
   timeBox: {
     width: 50,
     alignItems: 'center',

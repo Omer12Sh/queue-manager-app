@@ -15,10 +15,12 @@ i18n
       en: { translation: en },
       he: { translation: he },
     },
-    fallbackLng: 'en',
+    fallbackLng: 'he',
     supportedLngs: ['en', 'he'],
-    lng: 'en',
+    lng: 'he',
     interpolation: { escapeValue: false },
+    // Required on React Native because Intl.PluralRules is not consistently available.
+    compatibilityJSON: 'v3',
   });
 
 export default i18n;

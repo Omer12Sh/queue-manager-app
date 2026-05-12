@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n, { SUPPORTED_LANGUAGES } from '../i18n';
 
+const DEFAULT_LANGUAGE = 'he';
+
 interface LanguageContextType {
   language: string;
   dir: 'ltr' | 'rtl';
@@ -11,11 +13,11 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguageState] = useState<string>('en');
+  const [language, setLanguageState] = useState<string>(DEFAULT_LANGUAGE);
 
   useEffect(() => {
     AsyncStorage.getItem('qm_language').then((stored) => {
-      const lang = stored || 'en';
+      const lang = stored || DEFAULT_LANGUAGE;
       setLanguageState(lang);
       i18n.changeLanguage(lang);
     });
