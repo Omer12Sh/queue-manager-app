@@ -21,7 +21,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       const lang = stored || DEFAULT_LANGUAGE;
       setLanguageState(lang);
       i18n.changeLanguage(lang);
-      // Sync RTL state with stored language silently on startup
+      // Sync RTL state with stored language on startup. On iOS, changes only take
+      // effect after app restart. On Android the last call to forceRTL wins across
+      // all calls in the same bundle session — this call always runs after the
+      // synchronous i18n/index.ts forceRTL(true), so it correctly overrides it.
       const isRtl = SUPPORTED_LANGUAGES.find((l) => l.code === lang)?.dir === 'rtl';
       if (I18nManager.isRTL !== isRtl) {
         I18nManager.forceRTL(isRtl);

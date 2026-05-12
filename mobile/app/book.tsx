@@ -33,7 +33,7 @@ export default function BookScreen() {
 
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
-  // Next 14 days starting tomorrow
+  // Next 14 days starting tomorrow — using local noon to avoid timezone date-shift issues
   const dates = Array.from({ length: 14 }, (_, i) =>
     format(addDays(new Date(), i + 1), 'yyyy-MM-dd'),
   );
@@ -207,7 +207,7 @@ export default function BookScreen() {
     );
   }
 
-  // ── Step 3: Choose Date ───────────────────────────────────────────────────
+  // Step 3: Choose Date ───────────────────────────────────────────────
   if (step === 3) {
     return (
       <View style={[styles.container, { direction: dir }]}>
@@ -219,7 +219,9 @@ export default function BookScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateScroll}
           contentContainerStyle={styles.dateContent}>
           {dates.map((d) => {
-            const dateObj = new Date(d + 'T12:00:00Z');
+            // Use local time (no 'Z' suffix) to prevent UTC-to-local conversion shifting the date
+            const [year, month, day] = d.split('-').map(Number);
+            const dateObj = new Date(year, month - 1, day);
             const isSelected = d === selectedDate;
             return (
               <TouchableOpacity
@@ -296,7 +298,7 @@ export default function BookScreen() {
           {[
             { label: t('booking.providerLabel'), value: selectedProvider?.providerProfile?.businessName || selectedProvider?.name || '' },
             { label: t('booking.serviceLabel'), value: selectedService?.name || '' },
-            { label: t('booking.dateLabel'), value: selectedDate ? format(new Date(selectedDate + 'T12:00:00Z'), 'EEEE, d MMM yyyy') : '' },
+            { label: t('booking.dateLabel'), value: selectedDate ? format(new Date(Number(selectedDate.split('-')[0]), Number(selectedDate.split('-')[1]) - 1, Number(selectedDate.split('-')[2])), 'EEEE, d MMM yyyy') : '' },
             { label: t('booking.timeLabel'), value: selectedSlot ? format(parseISO(selectedSlot.startTime), 'HH:mm') : '' },
             { label: t('booking.durationLabel'), value: `${selectedService?.durationMin} ${t('booking.minutes')}` },
             { label: t('booking.priceLabel'), value: `₪${selectedService?.price}` },

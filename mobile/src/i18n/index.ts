@@ -9,9 +9,12 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'he', label: 'עברית', flag: '🇮🇱', dir: 'rtl' as const },
 ];
 
-// Allow RTL layout globally. forceRTL is set here because the default
-// language is Hebrew (RTL); when the user switches to LTR the app will
-// prompt for a restart so the native layout engine can re-apply.
+// Allow RTL layout globally. We call forceRTL(true) here because:
+// 1. The default language is Hebrew (RTL) so first-install / new sessions start in RTL.
+// 2. On Android this must be called synchronously before the first React render to avoid
+//    a layout flash. The LanguageContext useEffect always runs AFTER this and overrides
+//    with the persisted language choice, so English users end up with forceRTL(false)
+//    as the last call — which takes effect on the next app open.
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
 

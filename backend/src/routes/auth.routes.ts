@@ -32,6 +32,8 @@ router.post(
   '/login',
   [
     body('email').isEmail().normalizeEmail(),
+    // Login is intentionally lenient on password complexity so that legacy accounts
+    // (created before complexity rules were enforced) can still sign in.
     body('password').notEmpty().isLength({ min: 1, max: 128 }),
   ],
   login,
