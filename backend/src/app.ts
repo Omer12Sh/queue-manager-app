@@ -22,12 +22,13 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
+// Rate limiting — generous for authenticated users navigating the SPA
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path === '/health', // skip health-check
 });
 app.use('/api', limiter);
 

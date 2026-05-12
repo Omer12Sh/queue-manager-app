@@ -39,6 +39,7 @@ export interface Appointment {
   clientId: string;
   providerId: string;
   serviceId: string;
+  extraServiceIds: string[];
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
@@ -82,4 +83,12 @@ export interface AdminStats {
 export interface TimeSlot {
   startTime: string;
   endTime: string;
+}
+
+export interface AvailabilityOverride {
+  id: string;
+  providerId: string;
+  date: string;
+  isOff: boolean;
+  slots: { open: string; close: string }[];
 }

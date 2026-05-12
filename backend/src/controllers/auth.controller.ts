@@ -52,6 +52,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 
   const token = signToken(user.id, user.email, user.role);
+
+  // Notify all providers about the new user registration
+  if (role === 'CLIENT') {
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('user:new', { id: user.id, name: user.name, email: user.email, role: user.role });
+    }
+  }
+
   res.status(201).json({ token, user });
 };
 

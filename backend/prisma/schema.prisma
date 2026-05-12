@@ -62,6 +62,7 @@ model ProviderProfile {
   workingHours    Json     // { mon: {open:"09:00", close:"18:00"}, ... }
   defaultLanguage String   @default("en") // ISO 639-1 language code
   services        Service[]
+  availabilityOverrides AvailabilityOverride[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -88,16 +89,17 @@ model Service {
 }
 
 model Appointment {
-  id          String            @id @default(cuid())
-  clientId    String
-  providerId  String
-  serviceId   String
-  startTime   DateTime
-  endTime     DateTime
-  status      AppointmentStatus @default(PENDING)
-  notes       String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id              String            @id @default(cuid())
+  clientId        String
+  providerId      String
+  serviceId       String
+  extraServiceIds String[]          @default([])
+  startTime       DateTime
+  endTime         DateTime
+  status          AppointmentStatus @default(PENDING)
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   client   User    @relation("ClientAppointments", fields: [clientId], references: [id])
   provider User    @relation("ProviderAppointments", fields: [providerId], references: [id])
@@ -133,4 +135,19 @@ model Announcement {
   provider User @relation(fields: [providerId], references: [id])
 
   @@map("announcements")
+}
+
+model AvailabilityOverride {
+  id         String   @id @default(cuid())
+  providerId String
+  date       String   // ISO date "2024-01-15"
+  isOff      Boolean  @default(false) // true = whole day off
+  slots      Json     @default("[]")  // [{open:"09:00",close:"12:00"},{open:"14:00",close:"18:00"}]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  provider ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, date])
+  @@map("availability_overrides")
 }

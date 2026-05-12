@@ -40,8 +40,8 @@ export const appointmentApi = {
   create: (data: object) => api.post('/appointments', data),
   updateStatus: (id: string, status: string) => api.patch(`/appointments/${id}/status`, { status }),
   reschedule: (id: string, startTime: string) => api.patch(`/appointments/${id}/reschedule`, { startTime }),
-  getAvailableSlots: (providerId: string, date: string, serviceId: string) =>
-    api.get(`/appointments/slots/${providerId}`, { params: { date, serviceId } }),
+  getAvailableSlots: (providerId: string, date: string, serviceIds: string[]) =>
+    api.get(`/appointments/slots/${providerId}`, { params: { date, serviceIds } }),
 };
 
 // Services
@@ -68,6 +68,10 @@ export const providerApi = {
   getAnnouncements: (providerId: string) => api.get(`/provider/${providerId}/announcements`),
   updateAnnouncement: (id: string, data: object) => api.put(`/provider/announcements/${id}`, data),
   deleteAnnouncement: (id: string) => api.delete(`/provider/announcements/${id}`),
+  getAvailabilityOverrides: (userId: string) => api.get(`/provider/availability/${userId}`),
+  upsertAvailabilityOverride: (data: { date: string; isOff: boolean; slots: { open: string; close: string }[] }) =>
+    api.put('/provider/availability', data),
+  deleteAvailabilityOverride: (date: string) => api.delete(`/provider/availability/${date}`),
 };
 
 // Users
