@@ -20,14 +20,13 @@ export default function LoginScreen() {
   const [devCode, setDevCode] = useState<string | null>(null);
   const [verifiedToken, setVerifiedToken] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'CLIENT' | 'SERVICE_PROVIDER'>('CLIENT');
   const [loading, setLoading] = useState(false);
 
   // Email/password fallback
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const { login } = useAuth();
+  const { loginWithToken } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
   const { language, setLanguage, dir } = useLanguage();
@@ -64,8 +63,8 @@ export default function LoginScreen() {
         setVerifiedToken(res.data.verifiedToken);
         setScreen('register');
       } else {
-        // Logged in
-        await AsyncStorage.setItem('token', res.data.token);
+        // Logged in — update AuthContext so the tabs layout sees the user
+        await loginWithToken(res.data.token, res.data.user);
         router.replace('/(tabs)');
       }
     } catch {
@@ -79,8 +78,9 @@ export default function LoginScreen() {
     if (!name.trim()) { Alert.alert('', t('validation.nameRequired')); return; }
     setLoading(true);
     try {
-      const res = await authApi.registerPhone({ verifiedToken, name: name.trim(), role });
-      await AsyncStorage.setItem('token', res.data.token);
+      // Always register as CLIENT from the mobile app
+      const res = await authApi.registerPhone({ verifiedToken, name: name.trim(), role: 'CLIENT' });
+      await loginWithToken(res.data.token, res.data.user);
       router.replace('/(tabs)');
     } catch {
       Alert.alert('', t('auth.registrationFailed'));
@@ -93,7 +93,8 @@ export default function LoginScreen() {
     if (!email.trim() || !password) return;
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      const res = await authApi.login(email.trim(), password);
+      await loginWithToken(res.data.token, res.data.user);
       router.replace('/(tabs)');
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;

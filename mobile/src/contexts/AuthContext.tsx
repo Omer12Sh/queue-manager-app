@@ -8,6 +8,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -51,8 +52,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(newUser);
   };
 
+  const loginWithToken = useCallback(async (token: string, user: User) => {
+    await AsyncStorage.setItem('token', token);
+    setToken(token);
+    setUser(user);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );
