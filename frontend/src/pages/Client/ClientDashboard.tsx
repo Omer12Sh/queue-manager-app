@@ -1,29 +1,48 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { appointmentApi } from '../../services/api';
+import { appointmentApi, providerApi, userApi } from '../../services/api';
 import type { Appointment, Announcement } from '../../types';
 import { Calendar, Clock, History, PlusCircle, Megaphone, Star } from 'lucide-react';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { format, parseISO, isAfter } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 export default function ClientDashboard() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [announcements] = useState<Announcement[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
+  const { notifications } = useNotifications();
 
+  const load = async () => {
+    const [apptRes, providerRes] = await Promise.allSettled([
+      appointmentApi.getAll(),
+      userApi.getAll({ role: 'SERVICE_PROVIDER' }),
+    ]);
+    if (apptRes.status === 'fulfilled') setAppointments(apptRes.value.data);
+    if (providerRes.status === 'fulfilled' && providerRes.value.data.length > 0) {
+      const providerId = providerRes.value.data[0].id;
+      try {
+        const annRes = await providerApi.getAnnouncements(providerId);
+        setAnnouncements(annRes.data);
+      } catch { /* ignore */ }
+    }
+    setIsLoading(false);
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [user]);
+
+  // Refresh when a new message or update notification arrives
+  const latestMsgNotif = notifications.find((n) => n.type === 'message:new' || n.type === 'broadcast:message' || n.type === 'appointment:updated');
   useEffect(() => {
-    const load = async () => {
-      const [apptRes] = await Promise.allSettled([appointmentApi.getAll()]);
-      if (apptRes.status === 'fulfilled') setAppointments(apptRes.value.data);
-      setIsLoading(false);
-    };
-    load();
-  }, []);
+    if (latestMsgNotif) load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestMsgNotif?.id]);
 
   const upcoming = appointments.filter(
     (a) => ['PENDING', 'CONFIRMED', 'RESCHEDULED'].includes(a.status) && isAfter(parseISO(a.startTime), new Date()),
@@ -131,7 +150,10 @@ export default function ClientDashboard() {
                   <span className="text-lg font-bold text-brand-700 leading-tight">{format(parseISO(appt.startTime), 'd')}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm">{appt.service?.name}</p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {appt.service?.name}
+                    {appt.extraServices && appt.extraServices.length > 0 && ` + ${appt.extraServices.map((s) => s.name).join(' + ')}`}
+                  </p>
                   <p className="text-gray-500 text-xs">{format(parseISO(appt.startTime), 'EEEE, h:mm a')} · {appt.provider?.providerProfile?.businessName || appt.provider?.name}</p>
                 </div>
                 <StatusBadge status={appt.status} />
@@ -152,7 +174,10 @@ export default function ClientDashboard() {
             {past.slice(0, 3).map((appt) => (
               <div key={appt.id} className="flex items-center gap-4 py-2">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700">{appt.service?.name}</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {appt.service?.name}
+                    {appt.extraServices && appt.extraServices.length > 0 && ` + ${appt.extraServices.map((s) => s.name).join(' + ')}`}
+                  </p>
                   <p className="text-xs text-gray-400">{format(parseISO(appt.startTime), 'MMM d, yyyy')}</p>
                 </div>
                 <StatusBadge status={appt.status} />

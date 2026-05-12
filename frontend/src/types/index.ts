@@ -48,6 +48,7 @@ export interface Appointment {
   client?: Pick<User, 'id' | 'name' | 'email' | 'phone'>;
   provider?: Pick<User, 'id' | 'name'> & { providerProfile?: ProviderProfile };
   service?: Service;
+  extraServices?: Service[];
 }
 
 export interface Message {

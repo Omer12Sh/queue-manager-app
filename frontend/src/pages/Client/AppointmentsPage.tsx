@@ -93,8 +93,14 @@ export default function AppointmentsPage() {
                 <span className="text-2xl font-bold text-brand-700 leading-tight">{format(parseISO(appt.startTime), 'd')}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900">{appt.service?.name}</p>
-                <p className="text-gray-500 text-sm">{format(parseISO(appt.startTime), 'EEEE, h:mm a')} · {appt.service?.durationMin}min</p>
+                <p className="font-semibold text-gray-900">
+                  {appt.service?.name}
+                  {appt.extraServices && appt.extraServices.length > 0 && ` + ${appt.extraServices.map((s) => s.name).join(' + ')}`}
+                </p>
+                <p className="text-gray-500 text-sm">
+                  {format(parseISO(appt.startTime), 'EEEE, h:mm a')} · {Math.round((new Date(appt.endTime).getTime() - new Date(appt.startTime).getTime()) / 60000)}min
+                  {appt.service && ` · ₪${(appt.service.price + (appt.extraServices?.reduce((s, svc) => s + svc.price, 0) || 0))}`}
+                </p>
                 {isProvider
                   ? <p className="text-gray-400 text-xs mt-0.5">{appt.client?.name} · {appt.client?.email}</p>
                   : <p className="text-gray-400 text-xs mt-0.5">{appt.provider?.providerProfile?.businessName || appt.provider?.name}</p>

@@ -30,7 +30,19 @@ export const getAppointments = async (req: AuthRequest, res: Response): Promise<
     orderBy: { startTime: 'asc' },
   });
 
-  res.json(appointments);
+  // Attach extra service objects
+  const allExtraIds = [...new Set(appointments.flatMap((a: { extraServiceIds: string[] }) => a.extraServiceIds))];
+  const extraServicesMap: Record<string, object> = {};
+  if (allExtraIds.length > 0) {
+    const extraServices = await prisma.service.findMany({ where: { id: { in: allExtraIds } } });
+    extraServices.forEach((s: { id: string }) => { extraServicesMap[s.id] = s; });
+  }
+  const result = appointments.map((a: { extraServiceIds: string[] }) => ({
+    ...a,
+    extraServices: a.extraServiceIds.map((id: string) => extraServicesMap[id]).filter(Boolean),
+  }));
+
+  res.json(result);
 };
 
 export const getAppointment = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -117,6 +129,13 @@ export const createAppointment = async (req: AuthRequest, res: Response): Promis
     },
   });
 
+  // Attach extra service objects to response
+  let extraServiceObjects: object[] = [];
+  if (extraIds.length > 0) {
+    extraServiceObjects = await prisma.service.findMany({ where: { id: { in: extraIds } } });
+  }
+  const appointmentWithExtras = { ...appointment, extraServices: extraServiceObjects };
+
   // Add to Redis queue
   try {
     await enqueueAppointment(appointment.id, start.getTime());
@@ -127,10 +146,10 @@ export const createAppointment = async (req: AuthRequest, res: Response): Promis
   // Emit real-time update to provider
   const io = req.app.get('io');
   if (io) {
-    io.to(`user:${providerId}`).emit('appointment:new', appointment);
+    io.to(`user:${providerId}`).emit('appointment:new', appointmentWithExtras);
   }
 
-  res.status(201).json(appointment);
+  res.status(201).json(appointmentWithExtras);
 };
 
 export const updateAppointmentStatus = async (req: AuthRequest, res: Response): Promise<void> => {

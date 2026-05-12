@@ -11,6 +11,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { format, parseISO, isToday } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 export default function ProviderDashboard() {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export default function ProviderDashboard() {
   const [aiLoading, setAiLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
+  const { notifications } = useNotifications();
 
   const load = async () => {
     const [apptRes, svcRes] = await Promise.allSettled([
@@ -32,20 +34,34 @@ export default function ProviderDashboard() {
     setIsLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [user]);
+  const latestApptNotif = notifications.find((n) => n.type === 'appointment:new');
+  useEffect(() => {
+    if (latestApptNotif) load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestApptNotif?.id]);
 
   const todayAppts = appointments.filter((a) => isToday(parseISO(a.startTime)));
   const pending = appointments.filter((a) => a.status === 'PENDING');
 
+  const apptTotalPrice = (a: Appointment) =>
+    (a.service?.price || 0) + (a.extraServices?.reduce((s, svc) => s + svc.price, 0) || 0);
+
   // Daily expected: sum of today's PENDING + CONFIRMED + COMPLETED appointment prices
   const dailyExpected = todayAppts
     .filter((a) => ['PENDING', 'CONFIRMED', 'COMPLETED'].includes(a.status))
-    .reduce((sum, a) => sum + (a.service?.price || 0), 0);
+    .reduce((sum, a) => sum + apptTotalPrice(a), 0);
 
   // All-time earned: all COMPLETED appointments ever
   const allTimeEarned = appointments
     .filter((a) => a.status === 'COMPLETED')
-    .reduce((sum, a) => sum + (a.service?.price || 0), 0);
+    .reduce((sum, a) => sum + apptTotalPrice(a), 0);
+
+  const apptAllServices = (a: Appointment) => {
+    const all = [a.service, ...(a.extraServices || [])].filter(Boolean) as { name: string; durationMin: number }[];
+    return all;
+  };
 
   const handleStatusChange = async (id: string, status: string) => {
     try {
@@ -85,11 +101,10 @@ export default function ProviderDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label={t('provider.todayAppointments')} value={todayAppts.length} icon={<Calendar size={20} />} color="brand" />
         <StatCard label={t('provider.pendingConfirmations')} value={pending.length} icon={<Clock size={20} />} color="yellow" />
         <StatCard label={t('provider.activeServices')} value={services.length} icon={<Sparkles size={20} />} color="blue" />
-        <StatCard label={t('provider.dailyExpected')} value={`₪${dailyExpected.toLocaleString()}`} icon={<DollarSign size={20} />} color="green" />
       </div>
 
       {/* Revenue counters */}
@@ -129,45 +144,49 @@ export default function ProviderDashboard() {
             <p className="text-gray-400 text-sm text-center py-8">{t('provider.noTodayAppointments')}</p>
           ) : (
             <div className="space-y-3">
-              {todayAppts.map((appt) => (
-                <div key={appt.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50">
-                  <div className="w-16 text-center">
-                    <p className="text-xs font-bold text-gray-700">{format(parseISO(appt.startTime), 'h:mm')}</p>
-                    <p className="text-xs text-gray-400">{format(parseISO(appt.startTime), 'a')}</p>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm truncate">{appt.client?.name}</p>
-                    <p className="text-gray-500 text-xs">{appt.service?.name} · {appt.service?.durationMin}min</p>
-                  </div>
-                  <StatusBadge status={appt.status} />
-                  {appt.status === 'PENDING' && (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => handleStatusChange(appt.id, 'CONFIRMED')}
-                        className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                        title={t('appointments.confirm')}
-                      >
-                        <CheckCircle size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
-                        className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                        title={t('appointments.cancel')}
-                      >
-                        <XCircle size={15} />
-                      </button>
+              {todayAppts.map((appt) => {
+                const allSvcs = apptAllServices(appt);
+                const totalDur = Math.round((new Date(appt.endTime).getTime() - new Date(appt.startTime).getTime()) / 60000);
+                return (
+                  <div key={appt.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50">
+                    <div className="w-16 text-center">
+                      <p className="text-xs font-bold text-gray-700">{format(parseISO(appt.startTime), 'h:mm')}</p>
+                      <p className="text-xs text-gray-400">{format(parseISO(appt.startTime), 'a')}</p>
                     </div>
-                  )}
-                  {appt.status === 'CONFIRMED' && (
-                    <button
-                      onClick={() => handleStatusChange(appt.id, 'COMPLETED')}
-                      className="text-xs px-2 py-1 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-100 transition-colors"
-                    >
-                      {t('appointments.complete')}
-                    </button>
-                  )}
-                </div>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">{appt.client?.name}</p>
+                      <p className="text-gray-500 text-xs">{allSvcs.map((s) => s.name).join(' + ')} · {totalDur}min</p>
+                    </div>
+                    <StatusBadge status={appt.status} />
+                    {appt.status === 'PENDING' && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleStatusChange(appt.id, 'CONFIRMED')}
+                          className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                          title={t('appointments.confirm')}
+                        >
+                          <CheckCircle size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
+                          className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                          title={t('appointments.cancel')}
+                        >
+                          <XCircle size={15} />
+                        </button>
+                      </div>
+                    )}
+                    {appt.status === 'CONFIRMED' && (
+                      <button
+                        onClick={() => handleStatusChange(appt.id, 'COMPLETED')}
+                        className="text-xs px-2 py-1 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-100 transition-colors"
+                      >
+                        {t('appointments.complete')}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -239,43 +258,47 @@ export default function ProviderDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {appointments.slice(0, 10).map((appt) => (
-                <tr key={appt.id} className="hover:bg-gray-50">
-                  <td className="py-3 font-medium text-gray-900">{appt.client?.name}</td>
-                  <td className="py-3 text-gray-600">{appt.service?.name}</td>
-                  <td className="py-3 text-gray-600">{format(parseISO(appt.startTime), 'MMM d, h:mm a')}</td>
-                  <td className="py-3 text-gray-600">₪{appt.service?.price}</td>
-                  <td className="py-3"><StatusBadge status={appt.status} /></td>
-                  <td className="py-3">
-                    <div className="flex gap-1">
-                      {appt.status === 'PENDING' && (
-                        <>
+              {appointments.slice(0, 10).map((appt) => {
+                const allSvcs = apptAllServices(appt);
+                const totalPrice = apptTotalPrice(appt);
+                return (
+                  <tr key={appt.id} className="hover:bg-gray-50">
+                    <td className="py-3 font-medium text-gray-900">{appt.client?.name}</td>
+                    <td className="py-3 text-gray-600">{allSvcs.map((s) => s.name).join(' + ')}</td>
+                    <td className="py-3 text-gray-600">{format(parseISO(appt.startTime), 'MMM d, h:mm a')}</td>
+                    <td className="py-3 text-gray-600">₪{totalPrice}</td>
+                    <td className="py-3"><StatusBadge status={appt.status} /></td>
+                    <td className="py-3">
+                      <div className="flex gap-1">
+                        {appt.status === 'PENDING' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(appt.id, 'CONFIRMED')}
+                              className="text-xs px-2 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                            >
+                              {t('appointments.confirm')}
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
+                              className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            >
+                              {t('appointments.cancel')}
+                            </button>
+                          </>
+                        )}
+                        {appt.status === 'CONFIRMED' && (
                           <button
-                            onClick={() => handleStatusChange(appt.id, 'CONFIRMED')}
-                            className="text-xs px-2 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                            onClick={() => handleStatusChange(appt.id, 'COMPLETED')}
+                            className="text-xs px-2 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
                           >
-                            {t('appointments.confirm')}
+                            {t('appointments.complete')}
                           </button>
-                          <button
-                            onClick={() => handleStatusChange(appt.id, 'CANCELLED')}
-                            className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                          >
-                            {t('appointments.cancel')}
-                          </button>
-                        </>
-                      )}
-                      {appt.status === 'CONFIRMED' && (
-                        <button
-                          onClick={() => handleStatusChange(appt.id, 'COMPLETED')}
-                          className="text-xs px-2 py-1 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
-                        >
-                          {t('appointments.complete')}
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {appointments.length === 0 && (
