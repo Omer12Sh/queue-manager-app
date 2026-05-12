@@ -75,7 +75,8 @@
     "cancel": "בטל",
     "cancelConfirm": "לבטל פגישה זו?",
     "cancelSuccess": "הפגישה בוטלה",
-    "cancelFailed": "הביטול נכשל"
+    "cancelFailed": "הביטול נכשל",
+    "loadFailed": "טעינת הפגישות נכשלה"
   },
   "booking": {
     "title": "קביעת פגישה",

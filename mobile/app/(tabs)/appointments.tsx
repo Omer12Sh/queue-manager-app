@@ -31,8 +31,11 @@ export default function AppointmentsTab() {
     if (filter) params.status = filter;
     appointmentApi.getAll(params)
       .then((res) => setAppointments(res.data))
+      .catch(() => {
+        Alert.alert(t('appointments.title'), t('appointments.loadFailed'));
+      })
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filter, t]);
 
   const handleCancel = (id: string) => {
     Alert.alert(

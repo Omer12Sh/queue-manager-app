@@ -19,6 +19,7 @@ i18n
     supportedLngs: ['en', 'he'],
     lng: 'he',
     interpolation: { escapeValue: false },
+    // Required on React Native because Intl.PluralRules is not consistently available.
     compatibilityJSON: 'v3',
   });
 
