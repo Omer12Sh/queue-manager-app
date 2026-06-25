@@ -28,6 +28,12 @@ Reason: why this sequence was chosen
 
 Then proceed with delegations in that order.
 
+And in the end of every session append a new entry in the file .github/copilot-instructions.md , Format:
+> ```
+> ### YYYY-MM-DD — <short summary>
+> - bullet points of what was done / decided / changed
+> ```
+
 ## Prime Directive
 Accept raw user requests/questions directly. Independently classify, plan, delegate, sequence, validate, and consolidate. Never ask the user to choose agents or write sub-prompts.
 
