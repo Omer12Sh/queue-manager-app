@@ -511,3 +511,11 @@ npx prisma studio
   - Root: `npm run lint` ✅ (warnings only), `npm run build` ✅
   - Mobile: `npm run lint` ✅ (warnings only)
   - Mobile: `npm run typecheck` ⚠️ fails with pre-existing ambient `@types/*` resolution errors unrelated to this React version fix.
+
+### 2026-06-25 — Mobile bundler crash fix: missing react-native-worklets
+
+- Fixed Metro bundling crash on `npx expo start`: `Error: [BABEL]: Cannot find module 'react-native-worklets/plugin'`
+- Root cause: `react-native-reanimated ~4.1.1` declares `react-native-worklets >=0.5.0` as a peer dependency. That package was not listed in `mobile/package.json`.
+- Fix: added `react-native-worklets: ~0.10.0` to `mobile/package.json` dependencies.
+- No changes to `babel.config.js`; the existing `react-native-reanimated/plugin` entry works correctly once `react-native-worklets` is installed.
+- Users must run `npm install` inside the `mobile/` directory after pulling this change.
