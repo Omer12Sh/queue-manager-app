@@ -113,6 +113,28 @@ tasks:
       - rm -rf backend/node_modules/@prisma/client
     silent: true
 
+  # ─── Composite start tasks ─────────────────────────────────────────────────────
+
+  start:web:
+    desc: "Full web startup: install → Docker (postgres+redis) → prisma migrate+seed → backend+frontend"
+    cmds:
+      - task: install
+      - task: docker:dev
+      - task: db:migrate
+      - task: db:generate
+      - task: db:seed
+      - task: dev
+
+  start:mobile:
+    desc: "Full mobile startup: install → Docker (postgres+redis) → prisma migrate+seed → Expo"
+    cmds:
+      - task: install
+      - task: docker:dev
+      - task: db:migrate
+      - task: db:generate
+      - task: db:seed
+      - task: dev:mobile
+
   # ─── Dev tasks ─────────────────────────────────────────────────────────────────
 
   dev:
