@@ -54,6 +54,51 @@ tasks:
       - npm install
       - task: install:mobile
 
+  # ─── Database / Prisma tasks ───────────────────────────────────────────────────
+
+  db:migrate:
+    desc: "Run Prisma migrations in dev (usage: task db:migrate -- --name <migration-name>)"
+    dir: backend
+    cmds:
+      - npx prisma migrate dev {{.CLI_ARGS}}
+
+  db:deploy:
+    desc: Apply pending migrations in production (prisma migrate deploy)
+    dir: backend
+    cmds:
+      - npx prisma migrate deploy
+
+  db:generate:
+    desc: Regenerate Prisma client after schema changes
+    dir: backend
+    cmds:
+      - npx prisma generate
+
+  db:seed:
+    desc: Seed the database with demo data
+    dir: backend
+    cmds:
+      - npx ts-node prisma/seed.ts
+
+  db:reset:
+    desc: Drop the database, re-apply all migrations, and re-seed (dev only)
+    dir: backend
+    cmds:
+      - npx prisma migrate reset --force
+
+  db:studio:
+    desc: Open Prisma Studio (database GUI)
+    dir: backend
+    cmds:
+      - npx prisma studio
+
+  clean:db:
+    desc: Remove the Prisma-generated client from backend
+    cmds:
+      - rm -rf backend/node_modules/.prisma
+      - rm -rf backend/node_modules/@prisma/client
+    silent: true
+
   # ─── Dev tasks ─────────────────────────────────────────────────────────────────
 
   dev:
