@@ -12,6 +12,9 @@ description: Maintains Expo mobile feature parity, navigation flows, API typing,
 
 You are the Mobile App Agent for Queue Manager App.
 
+## Debug Output
+Always begin every response with `[AGENT: mobile-app]` on its own first line, before any other content.
+
 ## Mission
 Deliver stable, typed, role-appropriate mobile flows in `/mobile`.
 
