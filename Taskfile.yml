@@ -111,6 +111,7 @@ tasks:
     cmds:
       - rm -rf backend/node_modules/.prisma
       - rm -rf backend/node_modules/@prisma/client
+      - rm -rf backend/prisma/migrations
     silent: true
 
   # ─── Composite start tasks ─────────────────────────────────────────────────────
