@@ -58,9 +58,8 @@ tasks:
 
   db:migrate:
     desc: "Run Prisma migrations in dev (usage: task db:migrate -- --name <migration-name>)"
-    dir: backend
     cmds:
-      - npx prisma migrate dev {{.CLI_ARGS}}
+      - npm run prisma:migrate --workspace=backend -- {{.CLI_ARGS}}
 
   db:deploy:
     desc: Apply pending migrations in production (prisma migrate deploy)
@@ -70,15 +69,13 @@ tasks:
 
   db:generate:
     desc: Regenerate Prisma client after schema changes
-    dir: backend
     cmds:
-      - npx prisma generate
+      - npm run prisma:generate --workspace=backend
 
   db:seed:
     desc: Seed the database with demo data
-    dir: backend
     cmds:
-      - npx ts-node prisma/seed.ts
+      - npm run prisma:seed --workspace=backend
 
   db:reset:
     desc: Drop the database, re-apply all migrations, and re-seed (dev only)
@@ -91,6 +88,23 @@ tasks:
     dir: backend
     cmds:
       - npx prisma studio
+
+  # ─── Docker tasks ──────────────────────────────────────────────────────────────
+
+  docker:dev:
+    desc: Start PostgreSQL + Redis in Docker (for local development)
+    cmds:
+      - docker compose up postgres redis -d
+
+  docker:prod:
+    desc: Build and start all services for production
+    cmds:
+      - docker compose up --build -d
+
+  docker:down:
+    desc: Stop and remove all Docker Compose containers
+    cmds:
+      - docker compose down
 
   clean:db:
     desc: Remove the Prisma-generated client from backend
