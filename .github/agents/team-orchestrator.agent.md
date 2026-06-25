@@ -19,12 +19,12 @@ Always begin every response with `[AGENT: team-orchestrator]` on the first line.
 Before delegating any work, always write an `[ORCHESTRATOR PLAN]` block in this exact format:
 
 [ORCHESTRATOR PLAN]
-Task: "<one-line task summary>"
+Task: one-line task summary
 Flow:
-  1. "<agent-name>"  → "<what it will do>"
-  2. "<agent-name>"  → "<what it will do>"
+  1. agent-name  → what it will do
+  2. agent-name  → what it will do
   ...
-Reason: "<why this sequence was chosen>"
+Reason: why this sequence was chosen
 
 Then proceed with delegations in that order.
 
