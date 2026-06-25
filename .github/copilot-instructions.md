@@ -502,3 +502,12 @@ npx prisma studio
 **i18n:** added missing keys to both `en.json` and `he.json`: `confirm`, `complete`, `statusUpdated`, `statusUpdateFailed`, `servicesSelected`, `next`, `noAvailableDates`, `noServices`, `loadFailed`, `dailyExpected`, `allTimeEarned`, `colActions`, all Settings keys, and phone-auth keys (`sendOtp`, `enterCode`, `verify`, `useEmailLogin`, `usePhoneLogin`).
 
 **Known limitation:** `I18nManager.forceRTL()` requires a full app restart to apply; RTL text styles (`writingDirection`, `textAlign`) are applied via React Native style props as a workaround for hot-reload sessions.
+
+### 2026-06-25 — Mobile React version mismatch fix
+
+- Fixed Expo mobile runtime crash caused by React version mismatch by aligning `mobile/package.json` `react` from `19.2.7` to `19.1.0` to match the React Native renderer expected by the current Expo/React Native stack.
+- Updated `mobile/package-lock.json` accordingly via `expo install react`.
+- Validation run:
+  - Root: `npm run lint` ✅ (warnings only), `npm run build` ✅
+  - Mobile: `npm run lint` ✅ (warnings only)
+  - Mobile: `npm run typecheck` ⚠️ fails with pre-existing ambient `@types/*` resolution errors unrelated to this React version fix.
