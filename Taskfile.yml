@@ -1,0 +1,68 @@
+# https://taskfile.dev
+version: "3"
+
+tasks:
+  # ─── Clean tasks ──────────────────────────────────────────────────────────────
+
+  clean:mobile:
+    desc: Remove all mobile-generated directories (.expo, node_modules, build artefacts)
+    cmds:
+      - rm -rf mobile/node_modules
+      - rm -rf mobile/.expo
+      - rm -rf mobile/dist
+      - rm -rf mobile/build
+      - rm -rf mobile/ios
+      - rm -rf mobile/android
+      - rm -rf mobile/web-build
+    silent: true
+
+  clean:frontend:
+    desc: Remove frontend node_modules and build output
+    cmds:
+      - rm -rf frontend/node_modules
+      - rm -rf frontend/dist
+    silent: true
+
+  clean:backend:
+    desc: Remove backend node_modules and build output
+    cmds:
+      - rm -rf backend/node_modules
+      - rm -rf backend/dist
+    silent: true
+
+  clean:
+    desc: Clean all workspaces (mobile + frontend + backend + root node_modules)
+    deps:
+      - clean:mobile
+      - clean:frontend
+      - clean:backend
+    cmds:
+      - rm -rf node_modules
+    silent: true
+
+  # ─── Install tasks ─────────────────────────────────────────────────────────────
+
+  install:mobile:
+    desc: Install mobile dependencies
+    dir: mobile
+    cmds:
+      - npm install
+
+  install:
+    desc: Install all workspace dependencies (root + mobile)
+    cmds:
+      - npm install
+      - task: install:mobile
+
+  # ─── Dev tasks ─────────────────────────────────────────────────────────────────
+
+  dev:
+    desc: Start backend + frontend dev servers concurrently
+    cmds:
+      - npm run dev
+
+  dev:mobile:
+    desc: Start the Expo dev server
+    dir: mobile
+    cmds:
+      - npx expo start
